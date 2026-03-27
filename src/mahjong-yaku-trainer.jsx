@@ -985,11 +985,191 @@ function genKokushiHand() {
   return tiles;
 }
 
+function genSanshokuHand() {
+  const start = randInt(1, 7);
+  const tiles = [];
+  for (const suit of ["m", "p", "s"]) {
+    tiles.push({ suit, num: start }, { suit, num: start + 1 }, { suit, num: start + 2 });
+  }
+  // 4th mentsu
+  const suit4 = randItem(["m", "p", "s"]);
+  if (Math.random() < 0.6) {
+    const s = randInt(1, 7);
+    tiles.push({ suit: suit4, num: s }, { suit: suit4, num: s + 1 }, { suit: suit4, num: s + 2 });
+  } else {
+    const n = randInt(1, 9);
+    tiles.push({ suit: suit4, num: n }, { suit: suit4, num: n }, { suit: suit4, num: n });
+  }
+  // Pair
+  const suitP = randItem(["m", "p", "s"]);
+  const numP = randInt(1, 9);
+  tiles.push({ suit: suitP, num: numP }, { suit: suitP, num: numP });
+  return tiles;
+}
+
+function genIttsuHand() {
+  const suit = randItem(["m", "p", "s"]);
+  const tiles = [];
+  for (const s of [1, 4, 7]) {
+    tiles.push({ suit, num: s }, { suit, num: s + 1 }, { suit, num: s + 2 });
+  }
+  // 4th mentsu
+  const suit4 = randItem(["m", "p", "s"]);
+  if (Math.random() < 0.6) {
+    const s = randInt(1, 7);
+    tiles.push({ suit: suit4, num: s }, { suit: suit4, num: s + 1 }, { suit: suit4, num: s + 2 });
+  } else {
+    const n = randInt(1, 9);
+    tiles.push({ suit: suit4, num: n }, { suit: suit4, num: n }, { suit: suit4, num: n });
+  }
+  // Pair
+  const suitP = randItem(["m", "p", "s"]);
+  const numP = randInt(1, 9);
+  tiles.push({ suit: suitP, num: numP }, { suit: suitP, num: numP });
+  return tiles;
+}
+
+function genChantaHand() {
+  const tiles = [];
+  for (let i = 0; i < 3; i++) {
+    if (Math.random() < 0.7) {
+      const suit = randItem(["m", "p", "s"]);
+      const start = Math.random() < 0.5 ? 1 : 7;
+      tiles.push({ suit, num: start }, { suit, num: start + 1 }, { suit, num: start + 2 });
+    } else {
+      if (Math.random() < 0.5) {
+        const suit = randItem(["m", "p", "s"]);
+        const num = Math.random() < 0.5 ? 1 : 9;
+        tiles.push({ suit, num }, { suit, num }, { suit, num });
+      } else {
+        const num = randInt(1, 7);
+        tiles.push({ suit: "z", num }, { suit: "z", num }, { suit: "z", num });
+      }
+    }
+  }
+  // 4th mentsu with terminal/honor
+  if (Math.random() < 0.5) {
+    const num = randInt(1, 7);
+    tiles.push({ suit: "z", num }, { suit: "z", num }, { suit: "z", num });
+  } else {
+    const suit = randItem(["m", "p", "s"]);
+    const start = Math.random() < 0.5 ? 1 : 7;
+    tiles.push({ suit, num: start }, { suit, num: start + 1 }, { suit, num: start + 2 });
+  }
+  // Pair (terminal or honor)
+  if (Math.random() < 0.5) {
+    const suit = randItem(["m", "p", "s"]);
+    const num = Math.random() < 0.5 ? 1 : 9;
+    tiles.push({ suit, num }, { suit, num });
+  } else {
+    const num = randInt(1, 7);
+    tiles.push({ suit: "z", num }, { suit: "z", num });
+  }
+  return tiles;
+}
+
+function genChinitsuHand() {
+  const suit = randItem(["m", "p", "s"]);
+  const tiles = [];
+  for (let i = 0; i < 4; i++) {
+    if (Math.random() < 0.7) {
+      const start = randInt(1, 7);
+      tiles.push({ suit, num: start }, { suit, num: start + 1 }, { suit, num: start + 2 });
+    } else {
+      const num = randInt(1, 9);
+      tiles.push({ suit, num }, { suit, num }, { suit, num });
+    }
+  }
+  const num = randInt(1, 9);
+  tiles.push({ suit, num }, { suit, num });
+  return tiles;
+}
+
+function genSuuankoHand() {
+  const tiles = [];
+  const used = new Set();
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 50; j++) {
+      const suit = randItem(["m", "p", "s", "z"]);
+      const maxN = suit === "z" ? 7 : 9;
+      const num = randInt(1, maxN);
+      const k = `${suit}${num}`;
+      if (!used.has(k)) {
+        used.add(k);
+        tiles.push({ suit, num }, { suit, num }, { suit, num });
+        break;
+      }
+    }
+  }
+  for (let j = 0; j < 50; j++) {
+    const suit = randItem(["m", "p", "s", "z"]);
+    const maxN = suit === "z" ? 7 : 9;
+    const num = randInt(1, maxN);
+    if (!used.has(`${suit}${num}`)) {
+      tiles.push({ suit, num }, { suit, num });
+      break;
+    }
+  }
+  return tiles.length === 14 ? tiles : null;
+}
+
+function genTsuiisoHand() {
+  const tiles = [];
+  const nums = [1, 2, 3, 4, 5, 6, 7];
+  const shuffled = shuffle(nums.map(n => n));
+  // 4 triplets + 1 pair from 7 honor types
+  for (let i = 0; i < 4; i++) {
+    const num = shuffled[i];
+    tiles.push({ suit: "z", num }, { suit: "z", num }, { suit: "z", num });
+  }
+  const pairNum = shuffled[4];
+  tiles.push({ suit: "z", num: pairNum }, { suit: "z", num: pairNum });
+  return tiles;
+}
+
+function genRyuiisoHand() {
+  const greens = [
+    { suit: "s", num: 2 }, { suit: "s", num: 3 }, { suit: "s", num: 4 },
+    { suit: "s", num: 6 }, { suit: "s", num: 8 }, { suit: "z", num: 6 },
+  ];
+  const tiles = [];
+  for (let i = 0; i < 4; i++) {
+    if (Math.random() < 0.4) {
+      // shuntsu 234
+      tiles.push({ suit: "s", num: 2 }, { suit: "s", num: 3 }, { suit: "s", num: 4 });
+    } else {
+      const t = randItem(greens);
+      tiles.push({ ...t }, { ...t }, { ...t });
+    }
+  }
+  const p = randItem(greens);
+  tiles.push({ ...p }, { ...p });
+  return tiles;
+}
+
+function genChinrotoHand() {
+  const terminals = [
+    { suit: "m", num: 1 }, { suit: "m", num: 9 },
+    { suit: "p", num: 1 }, { suit: "p", num: 9 },
+    { suit: "s", num: 1 }, { suit: "s", num: 9 },
+  ];
+  const shuffled = shuffle([...terminals]);
+  const tiles = [];
+  for (let i = 0; i < 4; i++) {
+    const t = shuffled[i];
+    tiles.push({ ...t }, { ...t }, { ...t });
+  }
+  const p = shuffled[4];
+  tiles.push({ ...p }, { ...p });
+  return tiles;
+}
+
 function generateQuizHand(maxHan, ctx) {
   const strategies = [genPinfuHand, genTanyaoHand, genYakuhaiHand];
-  if (maxHan >= 2) strategies.push(genChiitoiHand, genToitoiHand);
+  if (maxHan >= 2) strategies.push(genChiitoiHand, genToitoiHand, genSanshokuHand, genIttsuHand, genChantaHand);
   if (maxHan >= 3) strategies.push(genHonitsuHand);
-  if (maxHan >= 13) strategies.push(genKokushiHand);
+  if (maxHan >= 6) strategies.push(genChinitsuHand);
+  if (maxHan >= 13) strategies.push(genKokushiHand, genSuuankoHand, genTsuiisoHand, genRyuiisoHand, genChinrotoHand);
 
   for (let i = 0; i < 200; i++) {
     const gen = randItem(strategies);
