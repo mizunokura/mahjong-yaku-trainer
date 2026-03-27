@@ -275,32 +275,30 @@ const YAKU_DEFS = [
         targetDesc: "全牌2〜8の数牌のみ" };
     }
   },
-  {
-    name: "役牌", reading: "ヤクハイ", han: 1,
-    explain: "三元牌（白・發・中）、場風牌、自風牌のいずれかを刻子にする。鳴いてもOK。",
-    calc: (hand, melds, ctx, struct) => {
-      const all = [...hand, ...melds.flatMap(m => m.tiles)];
-      const counts = countByKey(all);
-      const yakuTiles = ["z5", "z6", "z7"];
-      if (ctx?.seatWind) yakuTiles.push(`z${ctx.seatWind}`);
-      if (ctx?.roundWind) yakuTiles.push(`z${ctx.roundWind}`);
-      const meldYaku = melds.some(m => m.type === "pon" && yakuTiles.includes(tileKey(m.tiles[0])));
-      if (meldYaku) return { distance: 0, desc: "役牌刻子あり", obstacles: [], wanted: [], targetDesc: "役牌刻子完成" };
-      const handYaku = struct.koutsuList.some(g => yakuTiles.includes(g.key));
-      if (handYaku) return { distance: 0, desc: "役牌刻子あり", obstacles: [], wanted: [], targetDesc: "役牌刻子完成" };
-      let minDist = 99, bestKey = null;
-      yakuTiles.forEach(k => {
+  // 役牌は個別エントリ。analyzeYakuで場風・自風に応じてフィルタする。
+  ...["z5", "z6", "z7", "z1", "z2", "z3", "z4"].map(zk => {
+    const nameMap = { z1: "東", z2: "南", z3: "西", z4: "北", z5: "白", z6: "發", z7: "中" };
+    const tn = nameMap[zk];
+    const isWind = ["z1","z2","z3","z4"].includes(zk);
+    return {
+      name: `役牌（${tn}）`, reading: "ヤクハイ", han: 1, yakuhaiKey: zk,
+      explain: isWind ? `${tn}が場風または自風のとき、${tn}の刻子で成立。` : `三元牌${tn}の刻子で成立。鳴いてもOK。`,
+      calc: (hand, melds, ctx, struct) => {
+        const all = [...hand, ...melds.flatMap(m => m.tiles)];
+        const counts = countByKey(all);
+        const k = zk;
+        const meldHas = melds.some(m => m.type === "pon" && tileKey(m.tiles[0]) === k);
+        if (meldHas) return { distance: 0, desc: `${tn}${tn}${tn} 成立`, obstacles: [], wanted: [], targetDesc: `${tn}刻子完成` };
+        const handHas = struct.koutsuList.some(g => g.key === k);
+        if (handHas) return { distance: 0, desc: `${tn}${tn}${tn} 成立`, obstacles: [], wanted: [], targetDesc: `${tn}刻子完成` };
         const c = counts[k] || 0;
         const d = Math.max(0, 3 - c);
-        if (d < minDist) { minDist = d; bestKey = k; }
-      });
-      const wanted = bestKey ? [{ suit: bestKey[0], num: parseInt(bestKey[1]) }] : [];
-      const nameMap = { z1: "東", z2: "南", z3: "西", z4: "北", z5: "白", z6: "發", z7: "中" };
-      return { distance: minDist, desc: `最も近い役牌まで${minDist}枚`,
-        obstacles: [], wanted,
-        targetDesc: bestKey ? `${nameMap[bestKey]}${nameMap[bestKey]}${nameMap[bestKey]} + 通常手` : "" };
-    }
-  },
+        const wanted = d > 0 ? [{ suit: k[0], num: parseInt(k[1]) }] : [];
+        return { distance: d, desc: `${tn}まで${d}枚`, obstacles: [], wanted,
+          targetDesc: `${tn}${tn}${tn} + 通常手` };
+      }
+    };
+  }),
   {
     name: "平和", reading: "ピンフ", han: 1,
     explain: "4面子すべて順子、雀頭が役牌以外、両面待ちで聴牌。門前限定。",
@@ -538,6 +536,42 @@ const YAKU_DEFS = [
     }
   },
   {
+    name: "純全帯么九", reading: "ジュンチャン", han: 3,
+    explain: "すべての面子と雀頭に数牌の1か9が含まれる（字牌なし）。鳴くと2翻。",
+    calc: (hand, melds, ctx, struct) => {
+      const all = [...hand, ...melds.flatMap(m => m.tiles)];
+      const honorCount = all.filter(t => t.suit === "z").length;
+
+      const meldCount = melds.length;
+      const totalMentsu = struct.mentsu + meldCount;
+
+      let badMentsu = 0;
+      const completedGroups = [
+        ...struct.groups.filter(g => ["shuntsu", "koutsu", "kantsu"].includes(g.type)),
+        ...melds.map(m => ({ tiles: m.tiles })),
+      ];
+      completedGroups.forEach(g => {
+        if (!g.tiles.some(t => isTerminal(t))) badMentsu++;
+      });
+
+      const hasValidPair = struct.toitsuList.some(g => g.tiles.some(t => isTerminal(t)));
+      const pairDist = struct.toitsuCount > 0 ? (hasValidPair ? 0 : 1) : 1;
+
+      const needMentsu = Math.max(0, 4 - totalMentsu);
+      const dist = needMentsu * 2 + badMentsu + pairDist + honorCount;
+
+      const obstacles = [
+        ...hand.filter(t => t.suit === "z"),
+        ...hand.filter(t => t.suit !== "z" && t.num >= 2 && t.num <= 8 &&
+          !completedGroups.some(g => g.tiles.some(gt => gt.id === t.id))),
+      ];
+      return { distance: Math.min(dist, 12),
+        desc: `面子${totalMentsu}/4 字牌${honorCount} 非端${badMentsu}`,
+        obstacles: obstacles.slice(0, 5), wanted: [],
+        targetDesc: "数牌の1・9を含む面子×4 + 端牌の対子（字牌なし）" };
+    }
+  },
+  {
     name: "混一色", reading: "ホンイツ", han: 3,
     explain: "1種類の数牌＋字牌だけで手を構成する。鳴くと2翻に下がる。",
     calc: (hand, melds, ctx, struct) => {
@@ -665,8 +699,17 @@ const YAKU_DEFS = [
 
 function analyzeYaku(handTiles, melds, ctx, maxHan) {
   const struct = analyzeStructure(handTiles);
+  // 風牌の役牌は場風・自風に該当するもののみ表示
+  const activeWindKeys = new Set();
+  if (ctx?.seatWind) activeWindKeys.add(`z${ctx.seatWind}`);
+  if (ctx?.roundWind) activeWindKeys.add(`z${ctx.roundWind}`);
   return YAKU_DEFS
     .filter(y => y.han <= maxHan)
+    .filter(y => {
+      if (!y.yakuhaiKey) return true; // 役牌以外はそのまま
+      if (!["z1","z2","z3","z4"].includes(y.yakuhaiKey)) return true; // 三元牌はそのまま
+      return activeWindKeys.has(y.yakuhaiKey); // 風牌は場風・自風のみ
+    })
     .map(y => ({ name: y.name, reading: y.reading, han: y.han, explain: y.explain,
       result: y.calc(handTiles, melds, ctx, struct) }))
     .filter(r => r.result.distance < 13);
@@ -1034,30 +1077,34 @@ function genIttsuHand() {
 
 function genChantaHand() {
   const tiles = [];
-  for (let i = 0; i < 3; i++) {
-    if (Math.random() < 0.7) {
+  const usedHonors = new Set();
+  const pickHonorKoutsu = () => {
+    const avail = [1,2,3,4,5,6,7].filter(n => !usedHonors.has(n));
+    if (avail.length === 0) return null;
+    const num = randItem(avail);
+    usedHonors.add(num);
+    return num;
+  };
+  for (let i = 0; i < 4; i++) {
+    if (Math.random() < 0.6) {
       const suit = randItem(["m", "p", "s"]);
       const start = Math.random() < 0.5 ? 1 : 7;
       tiles.push({ suit, num: start }, { suit, num: start + 1 }, { suit, num: start + 2 });
+    } else if (Math.random() < 0.5) {
+      const suit = randItem(["m", "p", "s"]);
+      const num = Math.random() < 0.5 ? 1 : 9;
+      tiles.push({ suit, num }, { suit, num }, { suit, num });
     } else {
-      if (Math.random() < 0.5) {
+      const num = pickHonorKoutsu();
+      if (num === null) {
+        // 字牌が使い切れたので端牌順子にフォールバック
         const suit = randItem(["m", "p", "s"]);
-        const num = Math.random() < 0.5 ? 1 : 9;
-        tiles.push({ suit, num }, { suit, num }, { suit, num });
+        const start = Math.random() < 0.5 ? 1 : 7;
+        tiles.push({ suit, num: start }, { suit, num: start + 1 }, { suit, num: start + 2 });
       } else {
-        const num = randInt(1, 7);
         tiles.push({ suit: "z", num }, { suit: "z", num }, { suit: "z", num });
       }
     }
-  }
-  // 4th mentsu with terminal/honor
-  if (Math.random() < 0.5) {
-    const num = randInt(1, 7);
-    tiles.push({ suit: "z", num }, { suit: "z", num }, { suit: "z", num });
-  } else {
-    const suit = randItem(["m", "p", "s"]);
-    const start = Math.random() < 0.5 ? 1 : 7;
-    tiles.push({ suit, num: start }, { suit, num: start + 1 }, { suit, num: start + 2 });
   }
   // Pair (terminal or honor)
   if (Math.random() < 0.5) {
@@ -1065,9 +1112,35 @@ function genChantaHand() {
     const num = Math.random() < 0.5 ? 1 : 9;
     tiles.push({ suit, num }, { suit, num });
   } else {
-    const num = randInt(1, 7);
-    tiles.push({ suit: "z", num }, { suit: "z", num });
+    const avail = [1,2,3,4,5,6,7].filter(n => !usedHonors.has(n));
+    if (avail.length > 0) {
+      const num = randItem(avail);
+      tiles.push({ suit: "z", num }, { suit: "z", num });
+    } else {
+      const suit = randItem(["m", "p", "s"]);
+      const num = Math.random() < 0.5 ? 1 : 9;
+      tiles.push({ suit, num }, { suit, num });
+    }
   }
+  return tiles;
+}
+
+function genJunchanHand() {
+  const tiles = [];
+  for (let i = 0; i < 4; i++) {
+    if (Math.random() < 0.6) {
+      const suit = randItem(["m", "p", "s"]);
+      const start = Math.random() < 0.5 ? 1 : 7;
+      tiles.push({ suit, num: start }, { suit, num: start + 1 }, { suit, num: start + 2 });
+    } else {
+      const suit = randItem(["m", "p", "s"]);
+      const num = Math.random() < 0.5 ? 1 : 9;
+      tiles.push({ suit, num }, { suit, num }, { suit, num });
+    }
+  }
+  const suit = randItem(["m", "p", "s"]);
+  const num = Math.random() < 0.5 ? 1 : 9;
+  tiles.push({ suit, num }, { suit, num });
   return tiles;
 }
 
@@ -1131,21 +1204,46 @@ function genTsuiisoHand() {
 }
 
 function genRyuiisoHand() {
-  const greens = [
+  // 使える牌: s2,s3,s4,s6,s8,z6 — 牌数を追跡して4枚超を防ぐ
+  const usedCounts = {};
+  const addTile = (suit, num) => {
+    const k = `${suit}${num}`;
+    usedCounts[k] = (usedCounts[k] || 0) + 1;
+    return usedCounts[k] <= 4;
+  };
+  const canAdd = (tiles) => {
+    const temp = { ...usedCounts };
+    for (const t of tiles) {
+      const k = `${t.suit}${t.num}`;
+      temp[k] = (temp[k] || 0) + 1;
+      if (temp[k] > 4) return false;
+    }
+    return true;
+  };
+  const greenKoutsu = [
     { suit: "s", num: 2 }, { suit: "s", num: 3 }, { suit: "s", num: 4 },
     { suit: "s", num: 6 }, { suit: "s", num: 8 }, { suit: "z", num: 6 },
   ];
   const tiles = [];
   for (let i = 0; i < 4; i++) {
-    if (Math.random() < 0.4) {
-      // shuntsu 234
-      tiles.push({ suit: "s", num: 2 }, { suit: "s", num: 3 }, { suit: "s", num: 4 });
-    } else {
-      const t = randItem(greens);
-      tiles.push({ ...t }, { ...t }, { ...t });
+    const candidates = [];
+    // 順子 234
+    const shuntsu = [{ suit: "s", num: 2 }, { suit: "s", num: 3 }, { suit: "s", num: 4 }];
+    if (canAdd(shuntsu)) candidates.push(shuntsu);
+    // 刻子
+    for (const g of greenKoutsu) {
+      const trip = [{ ...g }, { ...g }, { ...g }];
+      if (canAdd(trip)) candidates.push(trip);
     }
+    if (candidates.length === 0) return null;
+    const chosen = randItem(candidates);
+    chosen.forEach(t => { addTile(t.suit, t.num); tiles.push(t); });
   }
-  const p = randItem(greens);
+  // 対子
+  const pairCandidates = greenKoutsu.filter(g => canAdd([{ ...g }, { ...g }]));
+  if (pairCandidates.length === 0) return null;
+  const p = randItem(pairCandidates);
+  addTile(p.suit, p.num); addTile(p.suit, p.num);
   tiles.push({ ...p }, { ...p });
   return tiles;
 }
@@ -1170,7 +1268,7 @@ function genChinrotoHand() {
 function generateQuizHand(maxHan, ctx) {
   const strategies = [genPinfuHand, genTanyaoHand, genYakuhaiHand];
   if (maxHan >= 2) strategies.push(genChiitoiHand, genToitoiHand, genSanshokuHand, genIttsuHand, genChantaHand);
-  if (maxHan >= 3) strategies.push(genHonitsuHand);
+  if (maxHan >= 3) strategies.push(genHonitsuHand, genJunchanHand);
   if (maxHan >= 6) strategies.push(genChinitsuHand);
   if (maxHan >= 13) strategies.push(genKokushiHand, genSuuankoHand, genTsuiisoHand, genRyuiisoHand, genChinrotoHand);
 
@@ -1548,17 +1646,22 @@ function getYakuKeyTiles(yakuName, hand, ctx) {
   const struct = analyzeStructure(hand);
   const counts = countByKey(hand);
 
-  switch (yakuName) {
-    case "役牌": {
-      const yakuKeys = new Set(["z5", "z6", "z7"]);
-      if (ctx?.seatWind) yakuKeys.add(`z${ctx.seatWind}`);
-      if (ctx?.roundWind) yakuKeys.add(`z${ctx.roundWind}`);
+  // 役牌（白）等の前方一致
+  if (yakuName.startsWith("役牌")) {
+    const nameToKey = { "東": "z1", "南": "z2", "西": "z3", "北": "z4", "白": "z5", "發": "z6", "中": "z7" };
+    const match = yakuName.match(/役牌（(.+)）/);
+    const targetKey = match ? nameToKey[match[1]] : null;
+    if (targetKey) {
       const tiles = [];
       struct.koutsuList.forEach(g => {
-        if (yakuKeys.has(g.key)) g.tiles.forEach(t => tiles.push(t));
+        if (g.key === targetKey) g.tiles.forEach(t => tiles.push(t));
       });
       return tiles.length > 0 ? sortTiles(tiles) : sortTiles(hand);
     }
+    return sortTiles(hand);
+  }
+
+  switch (yakuName) {
 
     case "対々和":
     case "四暗刻": {
@@ -1715,10 +1818,11 @@ function getYakuBreakdown(yakuName, hand, ctx) {
       return { groups: [{ label: `${SUITS[bestSuit]}のみ`, tiles: sortTiles(hand) }] };
     }
 
-    case "混全帯么九": {
+    case "混全帯么九":
+    case "純全帯么九": {
       const groups = [];
       struct.shuntsuList.forEach(g => {
-        const hasTerminal = g.tiles.some(t => isTerminalOrHonor(t));
+        const hasTerminal = g.tiles.some(t => isTerminal(t));
         groups.push({ label: hasTerminal ? "順子（端牌含）" : "順子", tiles: sortTiles(g.tiles) });
       });
       struct.koutsuList.forEach(g => {
