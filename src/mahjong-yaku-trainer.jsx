@@ -885,9 +885,12 @@ function genTanyaoHand() {
   return tiles;
 }
 
-function genYakuhaiHand() {
+function genYakuhaiHand(ctx) {
   const tiles = [];
-  const yakuNum = randItem([5, 6, 7]);
+  const yakuNums = [5, 6, 7];
+  if (ctx?.seatWind) yakuNums.push(ctx.seatWind);
+  if (ctx?.roundWind && !yakuNums.includes(ctx.roundWind)) yakuNums.push(ctx.roundWind);
+  const yakuNum = randItem(yakuNums);
   tiles.push({ suit: "z", num: yakuNum }, { suit: "z", num: yakuNum }, { suit: "z", num: yakuNum });
   for (let i = 0; i < 3; i++) {
     const suit = randItem(["m", "p", "s"]);
@@ -1173,7 +1176,7 @@ function generateQuizHand(maxHan, ctx) {
 
   for (let i = 0; i < 200; i++) {
     const gen = randItem(strategies);
-    const tiles = gen();
+    const tiles = gen(ctx);
     if (!tiles || !validateTileCounts(tiles)) continue;
 
     const withIds = tiles.map((t, j) => ({ ...t, id: 2000 + j }));
@@ -2337,7 +2340,13 @@ export default function MahjongYakuTrainer() {
             ))}
           </div>
           {LEVELS.map((lv, i) => (
-            <button key={i} onClick={() => setLevel(i)} style={{
+            <button key={i} onClick={() => {
+              setLevel(i);
+              if (mode === "quiz") {
+                const h = generateQuizHand(LEVELS[i].maxHan, ctx);
+                setQuizHand(h); setQuizSelected([]); setQuizResult(null); setQuizScore({ correct: 0, total: 0 });
+              }
+            }} style={{
               padding: "4px 10px", fontSize: 11, borderRadius: 4,
               border: i === level ? "1px solid #e8a735" : "1px solid #3a5a40",
               background: i === level ? "rgba(232,167,53,0.15)" : "rgba(0,0,0,0.2)",
@@ -2355,9 +2364,9 @@ export default function MahjongYakuTrainer() {
       {/* Info bar */}
       <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 12,
         color: "#8a9a7a", fontFamily: "sans-serif", flexWrap: "wrap" }}>
+        <span>場風: {HONOR_NAMES[roundWind]}</span>
+        <span>自風: {HONOR_NAMES[seatWind]}</span>
         {mode === "trainer" && <>
-          <span>場風: {HONOR_NAMES[roundWind]}</span>
-          <span>自風: {HONOR_NAMES[seatWind]}</span>
           <span>巡目: {turnCount}</span>
           <span>残り: {wall.length}枚</span>
         </>}
