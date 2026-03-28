@@ -321,6 +321,23 @@ const YAKU_DEFS = [
       const pairPenalty = hasValidPair ? 0 : 1;
       let dist = easyFills + hardFills * 2 + stuckMentsu + pairPenalty;
       dist = Math.max(dist, honorTiles.length);
+      // 完成形(dist=0)のとき追加チェック: 雀頭が非役牌か、両面待ち可能か
+      if (dist === 0 && struct.shuntsuCount === 4 && struct.toitsuCount === 1) {
+        const pair = struct.toitsuList[0];
+        if (pair && yakuKeys.has(`${pair.tiles[0].suit}${pair.tiles[0].num}`)) {
+          dist = 1; // 役牌の雀頭は平和不可
+        }
+        if (dist === 0) {
+          // いずれかの順子が両面待ち可能か（端を抜いて両面形になるか）
+          const hasRyanmen = struct.shuntsuList.some(g => {
+            const s = g.num;
+            // s,s+1,s+2 の順子: s>=2 なら s を抜いて s+1,s+2 の両面待ち(s, s+3)
+            //                   s+2<=8 なら s+2 を抜いて s,s+1 の両面待ち(s-1, s+2)
+            return s >= 2 || s + 2 <= 8;
+          });
+          if (!hasRyanmen) dist = 1;
+        }
+      }
       // Hints
       const obstacles = [...honorTiles];
       struct.koutsuList.forEach(g => { if (g.tiles[0]) obstacles.push(g.tiles[0]); }); // koutsu is obstacle for pinfu
@@ -1286,7 +1303,7 @@ function generateQuizHand(maxHan, ctx) {
     return sortTiles(withIds);
   }
   // Fallback
-  const fb = genYakuhaiHand();
+  const fb = genYakuhaiHand(ctx);
   return sortTiles(fb.map((t, i) => ({ ...t, id: 2000 + i })));
 }
 
