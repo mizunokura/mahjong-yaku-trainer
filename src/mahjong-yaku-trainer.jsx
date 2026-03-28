@@ -432,8 +432,26 @@ const YAKU_DEFS = [
     }
   },
   {
-    name: "三色同順", reading: "サンショク", han: 2,
-    explain: "萬子・筒子・索子の3色で同じ数の順子を作る（例: 萬123 筒123 索123）。",
+    name: "三暗刻", reading: "サンアンコー", han: 2,
+    explain: "手牌の中で暗刻（鳴かずに揃えた刻子）を3つ作る。鳴いていてもOK（残り3面子が暗刻なら成立）。",
+    calc: (hand, melds, ctx, struct) => {
+      const anko = struct.koutsuCount + struct.kantsuCount;
+      const need = Math.max(0, 3 - anko);
+      const pairsAvail = Math.max(0, struct.toitsuCount - 1);
+      const easy = Math.min(need, pairsAvail);
+      const hard = need - easy;
+      const dist = easy + hard * 2;
+      const wanted = struct.toitsuList.slice(0, need).map(g => ({ suit: g.suit, num: g.num }));
+      const obstacles = [];
+      struct.shuntsuList.forEach(g => { if (g.tiles[0]) obstacles.push(g.tiles[0]); });
+      return { distance: dist, desc: `暗刻: ${anko}/3`,
+        obstacles: obstacles.slice(0, 4), wanted: wanted.slice(0, 4),
+        targetDesc: "暗刻×3 + 他1面子 + 対子" };
+    }
+  },
+  {
+    name: "三色同順", reading: "サンショク", han: 2, openHan: 1,
+    explain: "萬子・筒子・索子の3色で同じ数の順子を作る（例: 萬123 筒123 索123）。鳴くと1翻。",
     calc: (hand, melds, ctx, struct) => {
       const allShuntsu = [
         ...struct.shuntsuList.map(g => ({ suit: g.suit, num: g.num })),
@@ -465,8 +483,8 @@ const YAKU_DEFS = [
     }
   },
   {
-    name: "一気通貫", reading: "イッツー", han: 2,
-    explain: "同じ種類で123・456・789の3つの順子を揃える。",
+    name: "一気通貫", reading: "イッツー", han: 2, openHan: 1,
+    explain: "同じ種類で123・456・789の3つの順子を揃える。鳴くと1翻。",
     calc: (hand, melds, ctx, struct) => {
       const allShuntsu = [
         ...struct.shuntsuList.map(g => ({ suit: g.suit, num: g.num })),
@@ -496,8 +514,8 @@ const YAKU_DEFS = [
     }
   },
   {
-    name: "混全帯么九", reading: "チャンタ", han: 2,
-    explain: "すべての面子と雀頭に1・9・字牌が含まれる。",
+    name: "混全帯么九", reading: "チャンタ", han: 2, openHan: 1,
+    explain: "すべての面子と雀頭に1・9・字牌が含まれる。鳴くと1翻。",
     calc: (hand, melds, ctx, struct) => {
       const meldCount = melds.length;
       const totalMentsu = struct.mentsu + meldCount;
@@ -553,7 +571,7 @@ const YAKU_DEFS = [
     }
   },
   {
-    name: "純全帯么九", reading: "ジュンチャン", han: 3,
+    name: "純全帯么九", reading: "ジュンチャン", han: 3, openHan: 2,
     explain: "すべての面子と雀頭に数牌の1か9が含まれる（字牌なし）。鳴くと2翻。",
     calc: (hand, melds, ctx, struct) => {
       const all = [...hand, ...melds.flatMap(m => m.tiles)];
@@ -589,8 +607,8 @@ const YAKU_DEFS = [
     }
   },
   {
-    name: "混一色", reading: "ホンイツ", han: 3,
-    explain: "1種類の数牌＋字牌だけで手を構成する。鳴くと2翻に下がる。",
+    name: "混一色", reading: "ホンイツ", han: 3, openHan: 2,
+    explain: "1種類の数牌＋字牌だけで手を構成する。鳴くと2翻。",
     calc: (hand, melds, ctx, struct) => {
       const all = [...hand, ...melds.flatMap(m => m.tiles)];
       let best = 99, bestSuit = "m";
@@ -598,8 +616,11 @@ const YAKU_DEFS = [
         const bad = all.filter(t => t.suit !== suit && t.suit !== "z").length;
         if (bad < best) { best = bad; bestSuit = suit; }
       }
+      // 字牌が1枚もなければ混一色ではない（清一色の領域）
+      const hasHonor = all.some(t => t.suit === "z");
+      if (!hasHonor) best = Math.max(best, 1);
       const obstacles = hand.filter(t => t.suit !== bestSuit && t.suit !== "z");
-      return { distance: best, desc: `他色数字: ${best}枚`,
+      return { distance: best, desc: `他色数字: ${best}枚${!hasHonor ? " 字牌なし" : ""}`,
         obstacles: obstacles.slice(0, 5), wanted: [],
         targetDesc: `${SUITS[bestSuit]}＋字牌のみ` };
     }
@@ -621,7 +642,7 @@ const YAKU_DEFS = [
     }
   },
   {
-    name: "清一色", reading: "チンイツ", han: 6,
+    name: "清一色", reading: "チンイツ", han: 6, openHan: 5,
     explain: "1種類の数牌のみで手を構成する（字牌なし）。鳴くと5翻。",
     calc: (hand, melds, ctx, struct) => {
       const all = [...hand, ...melds.flatMap(m => m.tiles)];
@@ -727,7 +748,7 @@ function analyzeYaku(handTiles, melds, ctx, maxHan) {
       if (!["z1","z2","z3","z4"].includes(y.yakuhaiKey)) return true; // 三元牌はそのまま
       return activeWindKeys.has(y.yakuhaiKey); // 風牌は場風・自風のみ
     })
-    .map(y => ({ name: y.name, reading: y.reading, han: y.han, explain: y.explain,
+    .map(y => ({ name: y.name, reading: y.reading, han: y.han, openHan: y.openHan || null, explain: y.explain,
       result: y.calc(handTiles, melds, ctx, struct) }))
     .filter(r => r.result.distance < 13);
 }
@@ -775,6 +796,7 @@ function resolveYakuConflicts(yakuList) {
     if (y.name === "一盃口" && names.has("二盃口")) return false;
     if (y.name === "混全帯么九" && (names.has("清老頭") || names.has("純全帯么九"))) return false;
     if (y.name === "対々和" && (names.has("清老頭") || names.has("四暗刻"))) return false;
+    if (y.name === "三暗刻" && names.has("四暗刻")) return false;
     return true;
   });
 }
@@ -1178,6 +1200,54 @@ function genChinitsuHand() {
   return tiles;
 }
 
+function genSanAnkoHand() {
+  const tiles = [];
+  const used = new Set();
+  // 暗刻3つ
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 50; j++) {
+      const suit = randItem(["m", "p", "s", "z"]);
+      const maxN = suit === "z" ? 7 : 9;
+      const num = randInt(1, maxN);
+      const k = `${suit}${num}`;
+      if (!used.has(k)) {
+        used.add(k);
+        tiles.push({ suit, num }, { suit, num }, { suit, num });
+        break;
+      }
+    }
+  }
+  // 4つ目の面子: 順子 or 刻子
+  if (Math.random() < 0.6) {
+    const suit = randItem(["m", "p", "s"]);
+    const start = randInt(1, 7);
+    tiles.push({ suit, num: start }, { suit, num: start + 1 }, { suit, num: start + 2 });
+  } else {
+    for (let j = 0; j < 50; j++) {
+      const suit = randItem(["m", "p", "s", "z"]);
+      const maxN = suit === "z" ? 7 : 9;
+      const num = randInt(1, maxN);
+      const k = `${suit}${num}`;
+      if (!used.has(k)) {
+        used.add(k);
+        tiles.push({ suit, num }, { suit, num }, { suit, num });
+        break;
+      }
+    }
+  }
+  // 雀頭
+  for (let j = 0; j < 50; j++) {
+    const suit = randItem(["m", "p", "s", "z"]);
+    const maxN = suit === "z" ? 7 : 9;
+    const num = randInt(1, maxN);
+    if (!used.has(`${suit}${num}`)) {
+      tiles.push({ suit, num }, { suit, num });
+      break;
+    }
+  }
+  return tiles.length === 14 ? tiles : null;
+}
+
 function genSuuankoHand() {
   const tiles = [];
   const used = new Set();
@@ -1319,17 +1389,30 @@ function genNoYakuHand(ctx) {
   return null;
 }
 
+function tryOpenOneMentsu(tiles14) {
+  const struct = analyzeStructure(tiles14);
+  const mentsuGroups = [];
+  struct.koutsuList.forEach(g => mentsuGroups.push({ type: "pon", tiles: g.tiles }));
+  struct.shuntsuList.forEach(g => mentsuGroups.push({ type: "chi", tiles: sortTiles(g.tiles) }));
+  if (mentsuGroups.length === 0) return null;
+
+  const chosen = randItem(mentsuGroups);
+  const meldTileIds = new Set(chosen.tiles.map(t => t.id));
+  const remaining = tiles14.filter(t => !meldTileIds.has(t.id));
+  return { hand: sortTiles(remaining), melds: [{ type: chosen.type, tiles: chosen.tiles }] };
+}
+
 function generateQuizHand(maxHan, ctx) {
   // Lv.3以降: 約20%の確率で役なし手牌を生成
   if (maxHan >= 6 && Math.random() < 0.2) {
     const noYaku = genNoYakuHand(ctx);
     if (noYaku) {
       const withIds = noYaku.map((t, j) => ({ ...t, id: 2000 + j }));
-      return sortTiles(withIds);
+      return { hand: sortTiles(withIds), melds: [] };
     }
   }
   const strategies = [genPinfuHand, genTanyaoHand, genYakuhaiHand];
-  if (maxHan >= 2) strategies.push(genChiitoiHand, genToitoiHand, genSanshokuHand, genIttsuHand, genChantaHand);
+  if (maxHan >= 2) strategies.push(genChiitoiHand, genToitoiHand, genSanAnkoHand, genSanshokuHand, genIttsuHand, genChantaHand);
   if (maxHan >= 3) strategies.push(genHonitsuHand, genJunchanHand);
   if (maxHan >= 6) strategies.push(genChinitsuHand);
   if (maxHan >= 13) strategies.push(genKokushiHand, genSuuankoHand, genTsuiisoHand, genRyuiisoHand, genChinrotoHand);
@@ -1340,16 +1423,31 @@ function generateQuizHand(maxHan, ctx) {
     if (!tiles || !validateTileCounts(tiles)) continue;
 
     const withIds = tiles.map((t, j) => ({ ...t, id: 2000 + j }));
+
+    // Lv.2以降: 約35%の確率で副露を試みる
+    if (maxHan >= 2 && Math.random() < 0.35) {
+      const opened = tryOpenOneMentsu(withIds);
+      if (opened) {
+        const analysis = analyzeYaku(opened.hand, opened.melds, ctx, maxHan);
+        const completed = analysis.filter(y => y.result.distance === 0);
+        const resolved = resolveYakuConflicts(completed);
+        if (resolved.length > 0) {
+          return { hand: sortTiles(opened.hand), melds: opened.melds };
+        }
+        // 副露化で役がなくなった場合は門前のまま試す
+      }
+    }
+
     const analysis = analyzeYaku(withIds, [], ctx, maxHan);
     const completed = analysis.filter(y => y.result.distance === 0);
     const resolved = resolveYakuConflicts(completed);
     if (resolved.length === 0) continue;
 
-    return sortTiles(withIds);
+    return { hand: sortTiles(withIds), melds: [] };
   }
   // Fallback
   const fb = genYakuhaiHand(ctx);
-  return sortTiles(fb.map((t, i) => ({ ...t, id: 2000 + i })));
+  return { hand: sortTiles(fb.map((t, i) => ({ ...t, id: 2000 + i }))), melds: [] };
 }
 
 const LEVELS = [
@@ -1725,6 +1823,7 @@ function getYakuKeyTiles(yakuName, hand, ctx) {
 
   switch (yakuName) {
 
+    case "三暗刻":
     case "対々和":
     case "四暗刻": {
       const tiles = [];
@@ -1896,6 +1995,20 @@ function getYakuBreakdown(yakuName, hand, ctx) {
       return { groups };
     }
 
+    case "三暗刻": {
+      const groups = [];
+      struct.koutsuList.forEach(g => {
+        groups.push({ label: "暗刻", tiles: g.tiles });
+      });
+      struct.shuntsuList.forEach(g => {
+        groups.push({ label: "順子", tiles: sortTiles(g.tiles) });
+      });
+      if (struct.toitsuList[0]) {
+        groups.push({ label: "雀頭", tiles: struct.toitsuList[0].tiles });
+      }
+      return { groups, note: "手牌の中の暗刻（鳴いていない刻子）が3つで成立" };
+    }
+
     case "対々和":
     case "四暗刻": {
       const groups = [];
@@ -1914,7 +2027,7 @@ function getYakuBreakdown(yakuName, hand, ctx) {
 }
 
 // ─── Quiz Mode Components ───
-function QuizPanel({ quizHand, quizYakuList, quizSelected, onToggleYaku, onSubmit, quizResult, onNext, quizScore, ctx, maxHan }) {
+function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYaku, onSubmit, quizResult, onNext, quizScore, ctx, maxHan }) {
   const showNoYaku = maxHan >= 6;
   return (
     <div style={{
@@ -1927,12 +2040,14 @@ function QuizPanel({ quizHand, quizYakuList, quizSelected, onToggleYaku, onSubmi
           {showNoYaku ? "この手牌で成立している役を全て選んでください（なければ「役なし」）" : "この手牌で成立している役を全て選んでください"}
         </div>
         <div style={{
-          display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center",
+          display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", alignItems: "flex-end",
           background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "12px 8px",
         }}>
           {quizHand.map(t => (
             <Tile key={t.id} tile={t} />
           ))}
+          {quizMelds.length > 0 && <div style={{ width: 12 }} />}
+          {quizMelds.map((m, i) => <MeldGroup key={i} meld={m} />)}
         </div>
       </div>
 
@@ -2056,8 +2171,17 @@ function QuizPanel({ quizHand, quizYakuList, quizSelected, onToggleYaku, onSubmi
                     <span style={{ fontSize: 14, fontWeight: 700, color: "#50c878",
                       fontFamily: "'Noto Serif JP', serif" }}>{yakuName}</span>
                     <span style={{ fontSize: 10, color: "#8a9a7a", fontFamily: "sans-serif" }}>
-                      {yakuDef ? (yakuDef.han >= 13 ? "役満" : `${yakuDef.han}翻`) : ""}
+                      {yakuDef ? (yakuDef.han >= 13 ? "役満"
+                        : quizMelds.length > 0 && yakuDef.openHan
+                          ? `${yakuDef.openHan}翻`
+                          : `${yakuDef.han}翻`) : ""}
                     </span>
+                    {quizMelds.length > 0 && yakuDef?.openHan && (
+                      <span style={{ fontSize: 10, color: "#e8a735", fontFamily: "sans-serif",
+                        padding: "1px 6px", borderRadius: 3, background: "rgba(232,167,53,0.15)" }}>
+                        食い下がり（門前{yakuDef.han}翻→{yakuDef.openHan}翻）
+                      </span>
+                    )}
                     {quizResult.missed.includes(yakuName) && (
                       <span style={{ fontSize: 10, color: "#dc503c", fontFamily: "sans-serif",
                         padding: "1px 6px", borderRadius: 3, background: "rgba(220,80,60,0.15)" }}>
@@ -2065,6 +2189,11 @@ function QuizPanel({ quizHand, quizYakuList, quizSelected, onToggleYaku, onSubmi
                       </span>
                     )}
                   </div>
+                  {yakuDef?.explain && (
+                    <div style={{ fontSize: 11, color: "#8a9a7a", fontFamily: "sans-serif", marginBottom: 4 }}>
+                      {yakuDef.explain}
+                    </div>
+                  )}
                   {breakdown && breakdown.groups.length > 0 ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                       {breakdown.groups.map((g, gi) => (
@@ -2082,15 +2211,7 @@ function QuizPanel({ quizHand, quizYakuList, quizSelected, onToggleYaku, onSubmi
                         </div>
                       )}
                     </div>
-                  ) : breakdown && breakdown.note ? (
-                    <div style={{ fontSize: 11, color: "#8a9a7a", fontFamily: "sans-serif" }}>
-                      {breakdown.note}
-                    </div>
-                  ) : isAllTiles ? (
-                    <span style={{ fontSize: 11, color: "#8a9a7a", fontFamily: "sans-serif" }}>
-                      {yakuDef?.explain || ""}
-                    </span>
-                  ) : (
+                  ) : !isAllTiles && (
                     <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                       {keyTiles.map((t, i) => <MiniTile key={i} suit={t.suit} num={t.num} />)}
                     </div>
@@ -2101,10 +2222,27 @@ function QuizPanel({ quizHand, quizYakuList, quizSelected, onToggleYaku, onSubmi
           </div>
 
           {quizResult.wrong.length > 0 && (
-            <div style={{ fontSize: 11, color: "#dc503c", marginBottom: 8, fontFamily: "sans-serif",
-              padding: "6px 10px", borderRadius: 6,
-              background: "rgba(220,80,60,0.08)", border: "1px solid rgba(220,80,60,0.15)" }}>
-              誤選択: {quizResult.wrong.join("、")}
+            <div style={{ marginBottom: 8 }}>
+              {quizResult.wrong.map(yakuName => {
+                const yakuDef = quizYakuList.find(y => y.name === yakuName);
+                return (
+                  <div key={yakuName} style={{
+                    padding: "8px 10px", marginBottom: 4, borderRadius: 6,
+                    background: "rgba(220,80,60,0.08)", border: "1px solid rgba(220,80,60,0.15)",
+                  }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#dc503c",
+                      fontFamily: "'Noto Serif JP', serif" }}>{yakuName}</span>
+                    <span style={{ fontSize: 10, color: "#9a7a7a", fontFamily: "sans-serif", marginLeft: 6 }}>
+                      {yakuDef ? (yakuDef.han >= 13 ? "役満" : `${yakuDef.han}翻`) : ""}
+                    </span>
+                    {yakuDef?.explain && (
+                      <div style={{ fontSize: 11, color: "#9a7a7a", fontFamily: "sans-serif", marginTop: 3 }}>
+                        {yakuDef.explain}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
           <div style={{ fontSize: 12, color: "#8a9a7a", marginBottom: 12, fontFamily: "sans-serif", textAlign: "center" }}>
@@ -2272,6 +2410,7 @@ export default function MahjongYakuTrainer() {
   // ─── Quiz Mode State ───
   const [mode, setMode] = useState("quiz"); // "trainer" | "quiz"
   const [quizHand, setQuizHand] = useState([]);
+  const [quizMelds, setQuizMelds] = useState([]);
   const [quizSelected, setQuizSelected] = useState([]);
   const [quizResult, setQuizResult] = useState(null);
   const [quizScore, setQuizScore] = useState({ correct: 0, total: 0 });
@@ -2293,8 +2432,9 @@ export default function MahjongYakuTrainer() {
   useEffect(() => {
     dealHand();
     if (mode === "quiz") {
-      const h = generateQuizHand(currentLevel.maxHan, ctx);
-      setQuizHand(h);
+      const q = generateQuizHand(currentLevel.maxHan, ctx);
+      setQuizHand(q.hand);
+      setQuizMelds(q.melds);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -2469,19 +2609,20 @@ export default function MahjongYakuTrainer() {
   // ─── Quiz Logic ───
   const quizCorrectYaku = useMemo(() => {
     if (mode !== "quiz" || quizHand.length === 0) return [];
-    const analysis = analyzeYaku(quizHand, [], ctx, currentLevel.maxHan);
+    const analysis = analyzeYaku(quizHand, quizMelds, ctx, currentLevel.maxHan);
     const completed = analysis.filter(y => y.result.distance === 0);
     return resolveYakuConflicts(completed);
-  }, [mode, quizHand, ctx, currentLevel]);
+  }, [mode, quizHand, quizMelds, ctx, currentLevel]);
 
   const quizYakuList = useMemo(() => {
     if (mode !== "quiz") return [];
-    return analyzeYaku(quizHand.length > 0 ? quizHand : [], [], ctx, currentLevel.maxHan);
-  }, [mode, quizHand, ctx, currentLevel]);
+    return analyzeYaku(quizHand.length > 0 ? quizHand : [], quizMelds, ctx, currentLevel.maxHan);
+  }, [mode, quizHand, quizMelds, ctx, currentLevel]);
 
   const startQuiz = useCallback(() => {
-    const hand = generateQuizHand(currentLevel.maxHan, ctx);
-    setQuizHand(hand);
+    const q = generateQuizHand(currentLevel.maxHan, ctx);
+    setQuizHand(q.hand);
+    setQuizMelds(q.melds);
     setQuizSelected([]);
     setQuizResult(null);
   }, [currentLevel, ctx]);
@@ -2525,8 +2666,9 @@ export default function MahjongYakuTrainer() {
   const switchMode = useCallback((newMode) => {
     setMode(newMode);
     if (newMode === "quiz") {
-      const hand = generateQuizHand(currentLevel.maxHan, ctx);
-      setQuizHand(hand);
+      const q = generateQuizHand(currentLevel.maxHan, ctx);
+      setQuizHand(q.hand);
+      setQuizMelds(q.melds);
       setQuizSelected([]);
       setQuizResult(null);
       setQuizScore({ correct: 0, total: 0 });
@@ -2570,8 +2712,8 @@ export default function MahjongYakuTrainer() {
             <button key={i} onClick={() => {
               setLevel(i);
               if (mode === "quiz") {
-                const h = generateQuizHand(LEVELS[i].maxHan, ctx);
-                setQuizHand(h); setQuizSelected([]); setQuizResult(null); setQuizScore({ correct: 0, total: 0 });
+                const q = generateQuizHand(LEVELS[i].maxHan, ctx);
+                setQuizHand(q.hand); setQuizMelds(q.melds); setQuizSelected([]); setQuizResult(null); setQuizScore({ correct: 0, total: 0 });
               }
             }} style={{
               padding: "4px 10px", fontSize: 11, borderRadius: 4,
@@ -2607,6 +2749,7 @@ export default function MahjongYakuTrainer() {
       {mode === "quiz" && quizHand.length > 0 && (
         <QuizPanel
           quizHand={quizHand}
+          quizMelds={quizMelds}
           quizYakuList={quizYakuList}
           quizSelected={quizSelected}
           onToggleYaku={toggleQuizYaku}
