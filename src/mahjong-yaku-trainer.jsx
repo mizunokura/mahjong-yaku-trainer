@@ -1282,7 +1282,52 @@ function genChinrotoHand() {
   return tiles;
 }
 
+function genNoYakuHand(ctx) {
+  const suits = ["m", "p", "s"];
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const tiles = [];
+    // 3 shuntsu (各suit1つずつ) + 1 koutsu + 1 pair → 刻子があるので平和不成立
+    const shuffledSuits = shuffle(suits);
+    const starts = [];
+    for (let i = 0; i < 3; i++) {
+      const start = randInt(1, 7);
+      starts.push(start);
+      for (let j = 0; j < 3; j++) tiles.push({ suit: shuffledSuits[i], num: start + j });
+    }
+    // 三色同順回避: 3つの開始番号が同じならスキップ
+    if (starts[0] === starts[1] && starts[1] === starts[2]) continue;
+
+    // 刻子: 数牌のみ（字牌は役牌になりうるので避ける）
+    const kSuit = randItem(suits);
+    const kNum = randInt(1, 9);
+    for (let i = 0; i < 3; i++) tiles.push({ suit: kSuit, num: kNum });
+
+    // 雀頭: 数牌のみ
+    const pSuit = randItem(suits);
+    const pNum = randInt(1, 9);
+    for (let i = 0; i < 2; i++) tiles.push({ suit: pSuit, num: pNum });
+
+    if (!validateTileCounts(tiles)) continue;
+
+    // 役なしであることを検証
+    const withIds = tiles.map((t, j) => ({ ...t, id: 3000 + j }));
+    const analysis = analyzeYaku(withIds, [], ctx, 99);
+    const completed = analysis.filter(y => y.result.distance === 0);
+    const resolved = resolveYakuConflicts(completed);
+    if (resolved.length === 0) return tiles;
+  }
+  return null;
+}
+
 function generateQuizHand(maxHan, ctx) {
+  // Lv.3以降: 約20%の確率で役なし手牌を生成
+  if (maxHan >= 6 && Math.random() < 0.2) {
+    const noYaku = genNoYakuHand(ctx);
+    if (noYaku) {
+      const withIds = noYaku.map((t, j) => ({ ...t, id: 2000 + j }));
+      return sortTiles(withIds);
+    }
+  }
   const strategies = [genPinfuHand, genTanyaoHand, genYakuhaiHand];
   if (maxHan >= 2) strategies.push(genChiitoiHand, genToitoiHand, genSanshokuHand, genIttsuHand, genChantaHand);
   if (maxHan >= 3) strategies.push(genHonitsuHand, genJunchanHand);
@@ -1869,7 +1914,8 @@ function getYakuBreakdown(yakuName, hand, ctx) {
 }
 
 // ─── Quiz Mode Components ───
-function QuizPanel({ quizHand, quizYakuList, quizSelected, onToggleYaku, onSubmit, quizResult, onNext, quizScore, ctx }) {
+function QuizPanel({ quizHand, quizYakuList, quizSelected, onToggleYaku, onSubmit, quizResult, onNext, quizScore, ctx, maxHan }) {
+  const showNoYaku = maxHan >= 6;
   return (
     <div style={{
       background: "rgba(0,0,0,0.25)", borderRadius: 10, padding: 16,
@@ -1878,7 +1924,7 @@ function QuizPanel({ quizHand, quizYakuList, quizSelected, onToggleYaku, onSubmi
       {/* Quiz hand display */}
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 13, color: "#c8a64c", fontWeight: 700, marginBottom: 8, letterSpacing: 1 }}>
-          この手牌で成立している役を全て選んでください
+          {showNoYaku ? "この手牌で成立している役を全て選んでください（なければ「役なし」）" : "この手牌で成立している役を全て選んでください"}
         </div>
         <div style={{
           display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center",
@@ -1924,6 +1970,31 @@ function QuizPanel({ quizHand, quizYakuList, quizSelected, onToggleYaku, onSubmi
             </button>
           );
         })}
+        {/* 役なしチップ（Lv.3以降のみ表示） */}
+        {showNoYaku && (() => {
+          const selected = quizSelected.includes("役なし");
+          let chipBg = selected ? "rgba(120,100,160,0.25)" : "rgba(255,255,255,0.06)";
+          let chipBorder = selected ? "1px solid #9080c0" : "1px solid rgba(255,255,255,0.1)";
+          let chipColor = selected ? "#b0a0e0" : "#8088a0";
+          if (quizResult) {
+            const isCorrect = quizResult.correctNames.includes("役なし");
+            if (isCorrect && selected) {
+              chipBg = "rgba(80,200,120,0.2)"; chipBorder = "1px solid #50c878"; chipColor = "#50c878";
+            } else if (isCorrect && !selected) {
+              chipBg = "rgba(80,200,120,0.12)"; chipBorder = "1px dashed #50c878"; chipColor = "#50c878";
+            } else if (!isCorrect && selected) {
+              chipBg = "rgba(220,80,60,0.15)"; chipBorder = "1px solid #dc503c"; chipColor = "#dc503c";
+            }
+          }
+          return (
+            <button onClick={() => !quizResult && onToggleYaku("役なし")} style={{
+              padding: "6px 14px", fontSize: 13, borderRadius: 20, cursor: quizResult ? "default" : "pointer",
+              background: chipBg, border: chipBorder, color: chipColor,
+              fontWeight: selected ? 700 : 400, fontFamily: "'Noto Serif JP', serif",
+              transition: "all 0.15s", opacity: quizResult && !quizResult.correctNames.includes("役なし") && !selected ? 0.4 : 1,
+            }}>役なし</button>
+          );
+        })()}
       </div>
 
       {/* Submit / Result */}
@@ -1950,6 +2021,28 @@ function QuizPanel({ quizHand, quizYakuList, quizSelected, onToggleYaku, onSubmi
           {/* 各正解役の構成牌 */}
           <div style={{ marginBottom: 12 }}>
             {quizResult.correctNames.map(yakuName => {
+              if (yakuName === "役なし") {
+                return (
+                  <div key="役なし" style={{
+                    padding: "8px 10px", marginBottom: 6, borderRadius: 6,
+                    background: "rgba(80,200,120,0.08)", border: "1px solid rgba(80,200,120,0.2)",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "#50c878",
+                        fontFamily: "'Noto Serif JP', serif" }}>役なし</span>
+                      {quizResult.missed.includes("役なし") && (
+                        <span style={{ fontSize: 10, color: "#dc503c", fontFamily: "sans-serif",
+                          padding: "1px 6px", borderRadius: 3, background: "rgba(220,80,60,0.15)" }}>
+                          選び漏れ
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 11, color: "#8a9a7a", fontFamily: "sans-serif" }}>
+                      この手牌には成立する役がありません
+                    </span>
+                  </div>
+                );
+              }
               const yakuDef = quizYakuList.find(y => y.name === yakuName);
               const keyTiles = getYakuKeyTiles(yakuName, quizHand, ctx);
               const isAllTiles = keyTiles.length === quizHand.length;
@@ -2394,15 +2487,28 @@ export default function MahjongYakuTrainer() {
   }, [currentLevel, ctx]);
 
   const toggleQuizYaku = useCallback((name) => {
-    setQuizSelected(prev =>
-      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
-    );
+    setQuizSelected(prev => {
+      if (prev.includes(name)) return prev.filter(n => n !== name);
+      // 「役なし」と他の役は排他
+      if (name === "役なし") return ["役なし"];
+      return [...prev.filter(n => n !== "役なし"), name];
+    });
   }, []);
 
   const submitQuiz = useCallback(() => {
-    const correctNames = quizCorrectYaku.map(y => y.name);
-    const missed = correctNames.filter(n => !quizSelected.includes(n));
-    const wrong = quizSelected.filter(n => !correctNames.includes(n));
+    const yakuNames = quizCorrectYaku.map(y => y.name);
+    const isNoYaku = yakuNames.length === 0;
+    const correctNames = isNoYaku ? ["役なし"] : yakuNames;
+
+    let missed, wrong;
+    if (isNoYaku) {
+      const selectedNoYaku = quizSelected.includes("役なし");
+      missed = selectedNoYaku ? [] : ["役なし"];
+      wrong = quizSelected.filter(n => n !== "役なし");
+    } else {
+      missed = correctNames.filter(n => !quizSelected.includes(n));
+      wrong = quizSelected.filter(n => !correctNames.includes(n));
+    }
     const isCorrect = missed.length === 0 && wrong.length === 0;
 
     setQuizResult({ correctNames, missed, wrong, isCorrect });
@@ -2509,6 +2615,7 @@ export default function MahjongYakuTrainer() {
           onNext={nextQuiz}
           quizScore={quizScore}
           ctx={ctx}
+          maxHan={currentLevel.maxHan}
         />
       )}
 
