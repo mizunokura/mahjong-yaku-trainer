@@ -80,12 +80,15 @@ const THEMES = {
     tileDrawnGlow: "0 0 10px rgba(232,167,53,0.5), 0 2px 4px rgba(0,0,0,0.3)",
     tileDefaultShadow: "0 2px 4px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.5)",
     miniTileShadow: "0 1px 2px rgba(0,0,0,0.2)",
+    radiusLg: "10px", radiusMd: "6px", radiusSm: "4px",
+    titleDecor: "", correctAnim: "none",
   },
   cafe: {
     name: "☕",
     fontMain: "'Zen Maru Gothic', 'Noto Serif JP', sans-serif",
     fontUI: "'Zen Maru Gothic', sans-serif",
-    pageBg: "linear-gradient(160deg, #FDF5E6 0%, #F5ECD7 40%, #FFF8F0 100%)",
+    pageBg: "radial-gradient(circle, rgba(208,112,138,0.06) 1px, transparent 1px), linear-gradient(160deg, #FDF5E6 0%, #F5ECD7 40%, #FFF8F0 100%)",
+    pageBgSize: "20px 20px, 100% 100%",
     textPrimary: "#5A4A3A",
     textAccent: "#B06070",
     textSecondary: "#8A7A6A",
@@ -140,6 +143,8 @@ const THEMES = {
     tileDrawnGlow: "0 0 10px rgba(208,112,138,0.4), 0 2px 4px rgba(0,0,0,0.15)",
     tileDefaultShadow: "0 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.7)",
     miniTileShadow: "0 1px 2px rgba(0,0,0,0.1)",
+    radiusLg: "20px", radiusMd: "14px", radiusSm: "20px",
+    titleDecor: "🌸 ", correctAnim: "cafeBounce 0.5s ease",
   },
   cyber: {
     name: "💻️",
@@ -200,6 +205,8 @@ const THEMES = {
     tileDrawnGlow: "0 0 12px rgba(0,187,255,0.5), 0 2px 4px rgba(0,0,0,0.4)",
     tileDefaultShadow: "0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)",
     miniTileShadow: "0 1px 2px rgba(0,0,0,0.3)",
+    radiusLg: "10px", radiusMd: "6px", radiusSm: "4px",
+    titleDecor: "", correctAnim: "none",
   },
 };
 
@@ -1822,7 +1829,7 @@ function Tile({ tile, onClick, selected, drawn, small, dimmed, theme: th }) {
     <div onClick={onClick} style={{
       width: small ? 32 : 44, height: small ? 44 : 62,
       background: bg,
-      borderRadius: 5,
+      borderRadius: "var(--r-md)",
       border: selected ? `2px solid ${th?.accentLight || "#f0c050"}` : drawn ? `2px solid ${th?.accent || "#e8a735"}` : `1px solid ${borderColor}`,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       cursor: onClick ? "pointer" : "default",
@@ -1894,7 +1901,7 @@ function MeldGroup({ meld, preview, theme: th }) {
     <div style={{
       display: "flex", gap: 2, padding: "4px 6px",
       background: preview ? _a(th.accent, 0.15) : th.panelBgLighter,
-      borderRadius: 6,
+      borderRadius: "var(--r-md)",
       border: preview ? `1px dashed ${_a(th.accent, 0.4)}` : "1px solid transparent",
     }}>
       {meld.tiles.map((t, i) => <Tile key={i} tile={t} small theme={th} />)}
@@ -1918,7 +1925,7 @@ function HandDecomposition({ groups, theme: th, groupStyles: gs }) {
   return (
     <div style={{
       marginBottom: 12, padding: "10px 12px",
-      background: th.panelBgLighter, borderRadius: 8,
+      background: th.panelBgLighter, borderRadius: "var(--r-lg)",
       border: `1px solid ${th.panelBorderFaint}`,
     }}>
       {/* Summary line */}
@@ -1947,7 +1954,7 @@ function HandDecomposition({ groups, theme: th, groupStyles: gs }) {
             }}>
               <div style={{
                 display: "flex", gap: 2, padding: "3px 5px",
-                background: style.bg, borderRadius: 5,
+                background: style.bg, borderRadius: "var(--r-md)",
                 border: `1px solid ${style.border}`,
               }}>
                 {(g.tiles || []).map((t, ti) => (
@@ -1987,7 +1994,7 @@ function ScorePanel({ resolvedYaku, totalHan, fu, scoreInfo, theme: th }) {
     <div style={{
       background: th.scorePanelBg,
       border: `1px solid ${th.scorePanelBorder}`,
-      borderRadius: 8, padding: "12px 16px", marginBottom: 12,
+      borderRadius: "var(--r-lg)", padding: "12px 16px", marginBottom: 12,
       boxShadow: th.scorePanelShadow,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -1995,7 +2002,7 @@ function ScorePanel({ resolvedYaku, totalHan, fu, scoreInfo, theme: th }) {
           fontFamily: "var(--font-main)" }}>和了</span>
         {scoreInfo.label && (
           <span style={{ fontSize: 14, fontWeight: 700, color: th.accent,
-            fontFamily: "var(--font-ui)", padding: "2px 10px", borderRadius: 4,
+            fontFamily: "var(--font-ui)", padding: "2px 10px", borderRadius: "var(--r-sm)",
             background: _a(th.accent, 0.2), border: `1px solid ${_a(th.accent, 0.3)}`,
           }}>{scoreInfo.label}</span>
         )}
@@ -2003,7 +2010,7 @@ function ScorePanel({ resolvedYaku, totalHan, fu, scoreInfo, theme: th }) {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
         {resolvedYaku.map(y => (
           <span key={y.name} style={{
-            padding: "2px 8px", borderRadius: 4,
+            padding: "2px 8px", borderRadius: "var(--r-sm)",
             background: _a(th.accent, 0.12), border: `1px solid ${_a(th.accent, 0.25)}`,
             fontSize: 12, color: th.accent, fontFamily: "var(--font-ui)", fontWeight: 600,
           }}>{y.name} {y.han >= 13 ? "役満" : `${y.han}翻`}</span>
@@ -2037,7 +2044,7 @@ function ShantenPanel({ shanten, acceptTiles, theme: th }) {
     <div style={{
       marginBottom: 12, padding: "10px 12px",
       background: isTenpai ? th.shantenTenpaiBg : th.panelBgLighter,
-      borderRadius: 8,
+      borderRadius: "var(--r-lg)",
       border: isTenpai
         ? `1px solid ${_a(th.success, 0.4)}`
         : `1px solid ${th.panelBorderLight}`,
@@ -2328,16 +2335,16 @@ function TileSelectionGrid({ selected, onToggle, quizResult, correctKeys, theme:
             let showSelected = false;
             if (quizResult) {
               if (isCorrect && isSelected) {
-                wrapperStyle = { boxShadow: `0 0 0 2.5px ${th.success}`, borderRadius: 6 };
+                wrapperStyle = { boxShadow: `0 0 0 2.5px ${th.success}`, borderRadius: "var(--r-md)" };
                 showSelected = true;
               } else if (isCorrect && !isSelected) {
                 wrapperStyle = {
                   border: `2px dashed ${th.success}`,
-                  borderRadius: 6,
+                  borderRadius: "var(--r-md)",
                   margin: -2,
                 };
               } else if (!isCorrect && isSelected) {
-                wrapperStyle = { boxShadow: `0 0 0 2.5px ${th.error}`, borderRadius: 6 };
+                wrapperStyle = { boxShadow: `0 0 0 2.5px ${th.error}`, borderRadius: "var(--r-md)" };
                 showSelected = true;
               } else {
                 wrapperStyle = { opacity: 0.3 };
@@ -2365,7 +2372,7 @@ function TileSelectionGrid({ selected, onToggle, quizResult, correctKeys, theme:
 function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onSubmit, quizResult, onNext, quizScore, acceptTiles, theme: th }) {
   return (
     <div style={{
-      background: th.panelBg, borderRadius: 10, padding: 16,
+      background: th.panelBg, borderRadius: "var(--r-lg)", padding: 16,
       border: `1px solid ${th.panelBorder}`,
     }}>
       {/* Instruction */}
@@ -2391,7 +2398,7 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
       {/* 13-tile hand display */}
       <div style={{
         display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", alignItems: "flex-end",
-        background: th.panelBgLight, borderRadius: 8, padding: "12px 8px", marginBottom: 16,
+        background: th.panelBgLight, borderRadius: "var(--r-lg)", padding: "12px 8px", marginBottom: 16,
       }}>
         {quizHand.map(t => <Tile key={t.id} tile={t} theme={th} />)}
       </div>
@@ -2411,7 +2418,7 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
       {!quizResult ? (
         <div style={{ textAlign: "center" }}>
           <button onClick={onSubmit} disabled={quizSelected.length === 0} style={{
-            padding: "8px 32px", fontSize: 14, borderRadius: 6, fontWeight: 700,
+            padding: "8px 32px", fontSize: 14, borderRadius: "var(--r-md)", fontWeight: 700,
             fontFamily: "var(--font-main)", cursor: quizSelected.length === 0 ? "not-allowed" : "pointer",
             border: `1px solid ${th.accent}`,
             background: quizSelected.length === 0 ? th.panelBgLight : _a(th.accent, 0.2),
@@ -2424,13 +2431,14 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
             fontSize: 18, fontWeight: 700, marginBottom: 8, textAlign: "center",
             color: quizResult.isCorrect ? th.success : th.error,
             fontFamily: "var(--font-main)",
+            animation: th.correctAnim || "none",
           }}>
             {quizResult.isCorrect ? "正解！" : "不正解…"}
           </div>
 
           {/* Correct tiles display */}
           <div style={{
-            padding: "8px 10px", marginBottom: 8, borderRadius: 6,
+            padding: "8px 10px", marginBottom: 8, borderRadius: "var(--r-md)",
             background: _a(th.success, 0.08), border: `1px solid ${_a(th.success, 0.2)}`,
           }}>
             <div style={{ fontSize: 12, color: th.success, fontWeight: 700, marginBottom: 6,
@@ -2449,7 +2457,7 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
           {/* Missed tiles */}
           {quizResult.missed.length > 0 && (
             <div style={{
-              padding: "6px 10px", marginBottom: 6, borderRadius: 6,
+              padding: "6px 10px", marginBottom: 6, borderRadius: "var(--r-md)",
               background: _a(th.success, 0.05), border: `1px solid ${_a(th.success, 0.15)}`,
             }}>
               <span style={{ fontSize: 11, color: th.success, fontFamily: "var(--font-ui)" }}>
@@ -2465,7 +2473,7 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
           {/* Wrong tiles */}
           {quizResult.wrong.length > 0 && (
             <div style={{
-              padding: "6px 10px", marginBottom: 6, borderRadius: 6,
+              padding: "6px 10px", marginBottom: 6, borderRadius: "var(--r-md)",
               background: _a(th.error, 0.08), border: `1px solid ${_a(th.error, 0.15)}`,
             }}>
               <span style={{ fontSize: 11, color: th.error, fontFamily: "var(--font-ui)" }}>
@@ -2481,7 +2489,7 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
           {/* Yaku explanation */}
           {targetYaku.explain && (
             <div style={{
-              padding: "6px 10px", marginBottom: 8, borderRadius: 6,
+              padding: "6px 10px", marginBottom: 8, borderRadius: "var(--r-md)",
               background: th.panelBgSubtle,
             }}>
               <span style={{ fontSize: 11, color: th.textSecondary, fontFamily: "var(--font-ui)" }}>
@@ -2495,7 +2503,7 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
           </div>
           <div style={{ textAlign: "center" }}>
             <button onClick={onNext} style={{
-              padding: "8px 28px", fontSize: 14, borderRadius: 6, fontWeight: 700,
+              padding: "8px 28px", fontSize: 14, borderRadius: "var(--r-md)", fontWeight: 700,
               fontFamily: "var(--font-main)", cursor: "pointer",
               border: `1px solid ${th.accent}`, background: _a(th.accent, 0.2),
               color: th.accent, letterSpacing: 2,
@@ -2512,7 +2520,7 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
   const showNoYaku = maxHan >= 6;
   return (
     <div style={{
-      background: th.panelBg, borderRadius: 10, padding: 16,
+      background: th.panelBg, borderRadius: "var(--r-lg)", padding: 16,
       border: `1px solid ${th.panelBorder}`,
     }}>
       {/* Quiz hand display */}
@@ -2522,7 +2530,7 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
         </div>
         <div style={{
           display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", alignItems: "flex-end",
-          background: th.panelBgLight, borderRadius: 8, padding: "12px 8px",
+          background: th.panelBgLight, borderRadius: "var(--r-lg)", padding: "12px 8px",
         }}>
           {quizHand.map(t => (
             <Tile key={t.id} tile={t} theme={th} />
@@ -2597,7 +2605,7 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
       {!quizResult ? (
         <div style={{ textAlign: "center" }}>
           <button onClick={onSubmit} disabled={quizSelected.length === 0} style={{
-            padding: "8px 32px", fontSize: 14, borderRadius: 6, fontWeight: 700,
+            padding: "8px 32px", fontSize: 14, borderRadius: "var(--r-md)", fontWeight: 700,
             fontFamily: "var(--font-main)", cursor: quizSelected.length === 0 ? "not-allowed" : "pointer",
             border: `1px solid ${th.accent}`,
             background: quizSelected.length === 0 ? th.panelBgLight : _a(th.accent, 0.2),
@@ -2610,6 +2618,7 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
             fontSize: 18, fontWeight: 700, marginBottom: 8, textAlign: "center",
             color: quizResult.isCorrect ? th.success : th.error,
             fontFamily: "var(--font-main)",
+            animation: th.correctAnim || "none",
           }}>
             {quizResult.isCorrect ? "正解！" : "不正解…"}
           </div>
@@ -2620,7 +2629,7 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
               if (yakuName === "役なし") {
                 return (
                   <div key="役なし" style={{
-                    padding: "8px 10px", marginBottom: 6, borderRadius: 6,
+                    padding: "8px 10px", marginBottom: 6, borderRadius: "var(--r-md)",
                     background: _a(th.success, 0.08), border: `1px solid ${_a(th.success, 0.2)}`,
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -2645,7 +2654,7 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
               const breakdown = isAllTiles ? getYakuBreakdown(yakuName, quizHand, ctx) : null;
               return (
                 <div key={yakuName} style={{
-                  padding: "8px 10px", marginBottom: 6, borderRadius: 6,
+                  padding: "8px 10px", marginBottom: 6, borderRadius: "var(--r-md)",
                   background: _a(th.success, 0.08), border: `1px solid ${_a(th.success, 0.2)}`,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -2708,7 +2717,7 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
                 const yakuDef = quizYakuList.find(y => y.name === yakuName);
                 return (
                   <div key={yakuName} style={{
-                    padding: "8px 10px", marginBottom: 4, borderRadius: 6,
+                    padding: "8px 10px", marginBottom: 4, borderRadius: "var(--r-md)",
                     background: _a(th.error, 0.08), border: `1px solid ${_a(th.error, 0.15)}`,
                   }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: th.error,
@@ -2731,7 +2740,7 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
           </div>
           <div style={{ textAlign: "center" }}>
             <button onClick={onNext} style={{
-              padding: "8px 28px", fontSize: 14, borderRadius: 6, fontWeight: 700,
+              padding: "8px 28px", fontSize: 14, borderRadius: "var(--r-md)", fontWeight: 700,
               fontFamily: "var(--font-main)", cursor: "pointer",
               border: `1px solid ${th.accent}`, background: _a(th.accent, 0.2),
               color: th.accent, letterSpacing: 2,
@@ -2772,7 +2781,7 @@ function YakuRow({ name, reading, han, explain, result, diff, maxDist, expanded,
 
   return (
     <div style={{
-      background: rowBg, borderRadius: 6, borderLeft: leftBorder, transition: "all 0.25s ease",
+      background: rowBg, borderRadius: "var(--r-md)", borderLeft: leftBorder, transition: "all 0.25s ease",
       overflow: "hidden",
     }}>
       <div onClick={onToggle} style={{
@@ -2843,7 +2852,7 @@ function YakuRow({ name, reading, han, explain, result, diff, maxDist, expanded,
 
           <div style={{ marginTop: 8 }}>
             <button onClick={(e) => { e.stopPropagation(); onTarget(); }} style={{
-              padding: "4px 12px", fontSize: 11, borderRadius: 4, fontWeight: 600,
+              padding: "4px 12px", fontSize: 11, borderRadius: "var(--r-sm)", fontWeight: 600,
               fontFamily: "var(--font-ui)", cursor: "pointer", transition: "all 0.15s",
               border: isTarget ? `1px solid ${th.targetBorder}` : `1px solid ${th.textFaint}`,
               background: isTarget ? _a(th.accentLight, 0.2) : th.panelBgLight,
@@ -2859,7 +2868,7 @@ function YakuRow({ name, reading, han, explain, result, diff, maxDist, expanded,
 function MeldActionBtn({ label, active, color, onClick, theme: th }) {
   return (
     <button onClick={onClick} style={{
-      padding: "6px 16px", fontSize: 13, borderRadius: 5, fontWeight: 600,
+      padding: "6px 16px", fontSize: 13, borderRadius: "var(--r-md)", fontWeight: 600,
       fontFamily: "var(--font-ui)", cursor: "pointer", transition: "all 0.15s",
       border: `1px solid ${color}`,
       background: active ? `${color}30` : th.panelBgLight,
@@ -3259,16 +3268,38 @@ export default function MahjongYakuTrainer() {
   }, [currentLevel, ctx]);
 
   return (
-    <div style={{
+    <div data-theme={themeKey} style={{
       minHeight: "100vh",
       background: theme.pageBg,
+      backgroundSize: theme.pageBgSize || undefined,
       color: theme.textPrimary,
       fontFamily: theme.fontMain,
       "--font-main": theme.fontMain,
       "--font-ui": theme.fontUI,
+      "--r-lg": theme.radiusLg,
+      "--r-md": theme.radiusMd,
+      "--r-sm": theme.radiusSm,
       padding: "16px", boxSizing: "border-box",
     }}>
       <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Zen+Maru+Gothic:wght@400;700&family=M+PLUS+1+Code:wght@400;700&display=swap" rel="stylesheet" />
+      <style>{`
+        @keyframes cafeBounce {
+          0% { transform: scale(0.8); opacity: 0; }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes cafeFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+        [data-theme="cafe"] button:hover {
+          transform: scale(1.04);
+          transition: transform 0.2s ease;
+        }
+        [data-theme="cafe"] button:active {
+          transform: scale(0.97);
+        }
+      `}</style>
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -3278,7 +3309,12 @@ export default function MahjongYakuTrainer() {
             backgroundImage: theme.titleGradient,
             backgroundClip: "text", WebkitBackgroundClip: "text",
             color: "transparent", WebkitTextFillColor: "transparent", letterSpacing: 2,
-          }}>麻雀役道場</h1>
+          }}>{theme.titleDecor && <span style={{
+            animation: "cafeFloat 3s ease-in-out infinite",
+            display: "inline-block",
+            backgroundImage: "none", WebkitBackgroundClip: "initial", backgroundClip: "initial",
+            color: theme.textPrimary, WebkitTextFillColor: "initial",
+          }}>{theme.titleDecor}</span>}麻雀役道場</h1>
           <p style={{ fontSize: 11, color: theme.textMuted, margin: "2px 0 0", fontFamily: "var(--font-ui)" }}>
             {mode === "trainer" ? "手牌から狙える役を見極めよう"
               : quizType === "tenpai" ? "待ち牌を見極めよう"
@@ -3286,7 +3322,7 @@ export default function MahjongYakuTrainer() {
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
           {/* Theme toggle */}
-          <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", border: `1px solid ${theme.toggleBorder}` }}>
+          <div style={{ display: "flex", borderRadius: "var(--r-sm)", overflow: "hidden", border: `1px solid ${theme.toggleBorder}` }}>
             {Object.entries(THEMES).map(([key, t]) => (
               <button key={key} onClick={() => setThemeKey(key)} style={{
                 padding: "4px 10px", fontSize: 11, border: "none",
@@ -3297,7 +3333,7 @@ export default function MahjongYakuTrainer() {
             ))}
           </div>
           {/* Mode toggle */}
-          <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", border: `1px solid ${theme.toggleBorder}` }}>
+          <div style={{ display: "flex", borderRadius: "var(--r-sm)", overflow: "hidden", border: `1px solid ${theme.toggleBorder}` }}>
             {[{ key: "trainer", label: "道場" }, { key: "quiz", label: "クイズ" }].map(m => (
               <button key={m.key} onClick={() => switchMode(m.key)} style={{
                 padding: "4px 10px", fontSize: 11, border: "none",
@@ -3309,7 +3345,7 @@ export default function MahjongYakuTrainer() {
           </div>
           {/* Quiz type sub-toggle */}
           {mode === "quiz" && (
-            <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", border: `1px solid ${theme.toggleBorder}` }}>
+            <div style={{ display: "flex", borderRadius: "var(--r-sm)", overflow: "hidden", border: `1px solid ${theme.toggleBorder}` }}>
               {[{ key: "yaku", label: "役" }, { key: "tenpai", label: "聴牌" }].map(qt => (
                 <button key={qt.key} onClick={() => switchQuizType(qt.key)} style={{
                   padding: "4px 10px", fontSize: 11, border: "none",
@@ -3347,14 +3383,14 @@ export default function MahjongYakuTrainer() {
                 }
               }
             }} style={{
-              padding: "4px 10px", fontSize: 11, borderRadius: 4,
+              padding: "4px 10px", fontSize: 11, borderRadius: "var(--r-sm)",
               border: i === level ? `1px solid ${theme.accent}` : `1px solid ${theme.toggleBorder}`,
               background: i === level ? _a(theme.accent, 0.15) : theme.panelBgLight,
               color: i === level ? theme.accent : theme.textInfo, cursor: "pointer", fontFamily: "var(--font-ui)",
             }}>{lv.name}</button>
           ))}
           <button onClick={mode === "trainer" ? dealHand : (quizType === "tenpai" ? startTenpaiQuiz : startQuiz)} style={{
-            padding: "6px 14px", fontSize: 12, borderRadius: 4,
+            padding: "6px 14px", fontSize: 12, borderRadius: "var(--r-sm)",
             border: `1px solid ${theme.accent}`, background: _a(theme.accent, 0.15),
             color: theme.accent, cursor: "pointer", fontWeight: 600, fontFamily: "var(--font-ui)",
           }}>{mode === "trainer" ? "配牌" : "出題"}</button>
@@ -3420,7 +3456,7 @@ export default function MahjongYakuTrainer() {
 
       {/* Hand */}
       <div style={{
-        background: theme.panelBg, borderRadius: 10, padding: "14px 12px", marginBottom: 12,
+        background: theme.panelBg, borderRadius: "var(--r-lg)", padding: "14px 12px", marginBottom: 12,
         border: isPreviewing ? `1px solid ${theme.previewBorder}` : "1px solid transparent",
         transition: "border-color 0.3s",
       }}>
@@ -3450,7 +3486,7 @@ export default function MahjongYakuTrainer() {
 
           {phase === "draw" && (
             <button onClick={drawTile} style={{
-              padding: "8px 24px", fontSize: 14, borderRadius: 6,
+              padding: "8px 24px", fontSize: 14, borderRadius: "var(--r-md)",
               border: "none", background: theme.btnTsumoBg,
               color: theme.btnTsumoColor, cursor: "pointer", fontWeight: 700,
               fontFamily: "var(--font-main)", letterSpacing: 2,
@@ -3466,19 +3502,19 @@ export default function MahjongYakuTrainer() {
           {phase === "discard" && selectedTileId !== null && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6,
-                padding: "4px 10px", borderRadius: 6,
+                padding: "4px 10px", borderRadius: "var(--r-md)",
                 background: _a(theme.accent, 0.1), border: `1px solid ${_a(theme.accent, 0.3)}` }}>
                 {selectedTileObj && <Tile tile={selectedTileObj} small theme={theme} />}
                 <span style={{ fontSize: 12, color: theme.textAccent, fontFamily: "var(--font-ui)" }}>を切ると…</span>
               </div>
               <DiffBadge summary={diffSummary} theme={theme} />
               <button onClick={() => confirmDiscard(selectedTileId)} style={{
-                padding: "6px 18px", fontSize: 13, borderRadius: 5,
+                padding: "6px 18px", fontSize: 13, borderRadius: "var(--r-md)",
                 border: `1px solid ${theme.accent}`, background: _a(theme.accent, 0.2),
                 color: theme.accent, cursor: "pointer", fontWeight: 700, fontFamily: "var(--font-ui)",
               }}>打牌</button>
               <button onClick={() => setSelectedTileId(null)} style={{
-                padding: "6px 14px", fontSize: 12, borderRadius: 5,
+                padding: "6px 14px", fontSize: 12, borderRadius: "var(--r-md)",
                 border: `1px solid ${theme.toggleBorder}`, background: theme.panelBgLight,
                 color: theme.textSecondary, cursor: "pointer", fontFamily: "var(--font-ui)",
               }}>戻す</button>
@@ -3505,7 +3541,7 @@ export default function MahjongYakuTrainer() {
               </div>
               {meldPreview && (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "center",
-                  padding: "6px 12px", borderRadius: 6,
+                  padding: "6px 12px", borderRadius: "var(--r-md)",
                   background: _a(theme.accent, 0.08), border: `1px solid ${_a(theme.accent, 0.2)}` }}>
                   <span style={{ fontSize: 12, color: theme.textAccent, fontFamily: "var(--font-ui)" }}>
                     {meldPreview === "pon" && "ポンすると…"}
@@ -3514,12 +3550,12 @@ export default function MahjongYakuTrainer() {
                   </span>
                   <DiffBadge summary={diffSummary} theme={theme} />
                   <button onClick={confirmMeld} style={{
-                    padding: "5px 16px", fontSize: 12, borderRadius: 5,
+                    padding: "5px 16px", fontSize: 12, borderRadius: "var(--r-md)",
                     border: `1px solid ${theme.accent}`, background: _a(theme.accent, 0.2),
                     color: theme.accent, cursor: "pointer", fontWeight: 700, fontFamily: "var(--font-ui)",
                   }}>確定</button>
                   <button onClick={() => setMeldPreview(null)} style={{
-                    padding: "5px 12px", fontSize: 11, borderRadius: 5,
+                    padding: "5px 12px", fontSize: 11, borderRadius: "var(--r-md)",
                     border: `1px solid ${theme.toggleBorder}`, background: theme.panelBgLight,
                     color: theme.textSecondary, cursor: "pointer", fontFamily: "var(--font-ui)",
                   }}>比較</button>
@@ -3547,7 +3583,7 @@ export default function MahjongYakuTrainer() {
 
       {/* Discard pool */}
       {discardPool.length > 0 && (
-        <div style={{ marginBottom: 12, padding: "8px 10px", background: theme.panelBgLighter, borderRadius: 8 }}>
+        <div style={{ marginBottom: 12, padding: "8px 10px", background: theme.panelBgLighter, borderRadius: "var(--r-lg)" }}>
           <div style={{ fontSize: 10, color: theme.textMuted, marginBottom: 4, fontFamily: "var(--font-ui)" }}>捨て牌</div>
           <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
             {discardPool.map((t, i) => <Tile key={i} tile={t} small dimmed theme={theme} />)}
@@ -3568,7 +3604,7 @@ export default function MahjongYakuTrainer() {
 
       {/* Yaku Analysis Panel */}
       <div style={{
-        background: theme.panelBgLight, borderRadius: 10, padding: 12,
+        background: theme.panelBgLight, borderRadius: "var(--r-lg)", padding: 12,
         border: isPreviewing ? `1px solid ${_a(theme.accent, 0.35)}` : `1px solid ${theme.panelBorderLight}`,
         transition: "border-color 0.3s ease",
       }}>
@@ -3605,7 +3641,7 @@ export default function MahjongYakuTrainer() {
       {/* Legend */}
       <div style={{
         marginTop: 16, padding: "10px 12px", fontSize: 10, color: theme.textFaint,
-        fontFamily: "var(--font-ui)", background: theme.panelBgSubtle, borderRadius: 6, lineHeight: 1.8,
+        fontFamily: "var(--font-ui)", background: theme.panelBgSubtle, borderRadius: "var(--r-md)", lineHeight: 1.8,
       }}>
         <strong style={{ color: theme.textInfo }}>手牌構成:</strong>{" "}
         <span style={{ color: groupStyles.shuntsu.color }}>順子</span>
