@@ -72,7 +72,11 @@ function decomposeHand(tiles) {
   function score(groups) {
     let s = 0;
     groups.forEach(g => {
-      if (g.type === "kantsu") s += 1000;
+      // kantsu is scored just above koutsu so it doesn't dominate over
+      // shuntsu-based decompositions that form valid hands (4 mentsu + 1 pair).
+      // In a 14-tile hand, 4-of-a-kind without kan declaration should usually
+      // decompose as koutsu + isolated or as part of shuntsu sequences.
+      if (g.type === "kantsu") s += 101;
       else if (g.type === "koutsu" || g.type === "shuntsu") s += 100;
       else if (g.type === "toitsu") s += 10;
     });
@@ -1450,6 +1454,78 @@ function generateQuizHand(maxHan, ctx) {
   return { hand: sortTiles(fb.map((t, i) => ({ ...t, id: 2000 + i }))), melds: [] };
 }
 
+function generateTenpaiQuizHand(maxHan, ctx) {
+  const strategies = [genPinfuHand, genTanyaoHand, genYakuhaiHand];
+  if (maxHan >= 2) strategies.push(genChiitoiHand, genToitoiHand, genSanAnkoHand, genSanshokuHand, genIttsuHand, genChantaHand);
+  if (maxHan >= 3) strategies.push(genHonitsuHand, genJunchanHand);
+  if (maxHan >= 6) strategies.push(genChinitsuHand);
+  if (maxHan >= 13) strategies.push(genKokushiHand, genSuuankoHand, genTsuiisoHand, genRyuiisoHand, genChinrotoHand);
+
+  // All 34 tile types
+  const allTileTypes = [];
+  for (const suit of ["m", "p", "s"])
+    for (let num = 1; num <= 9; num++) allTileTypes.push({ suit, num });
+  for (let num = 1; num <= 7; num++) allTileTypes.push({ suit: "z", num });
+
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const gen = randItem(strategies);
+    const tiles = gen(ctx);
+    if (!tiles || !validateTileCounts(tiles)) continue;
+
+    const withIds = tiles.map((t, j) => ({ ...t, id: 2000 + j }));
+
+    // Only menzen hands
+    const analysis = analyzeYaku(withIds, [], ctx, maxHan);
+    const completed = analysis.filter(y => y.result.distance === 0);
+    const resolved = resolveYakuConflicts(completed);
+    if (resolved.length === 0) continue;
+
+    // Pick a target yaku
+    const target = randItem(resolved);
+
+    // Try removing each tile to find a tenpai 13-tile hand
+    const indices = shuffle([...Array(14).keys()]);
+    for (const removeIdx of indices) {
+      const hand13 = withIds.filter((_, i) => i !== removeIdx);
+      const shanten = calculateShanten(hand13, 0);
+      if (shanten !== 0) continue;
+
+      // Count tiles used in the 13-tile hand
+      const usedCounts = countByKey(hand13);
+
+      // Find accept tiles that complete the hand with target yaku
+      const acceptKeys = [];
+      for (const { suit, num } of allTileTypes) {
+        const key = `${suit}${num}`;
+        if ((usedCounts[key] || 0) >= 4) continue;
+
+        const testHand = [...hand13, { suit, num, id: -1 }];
+        const agari = checkHandComplete(testHand, []);
+        if (!agari) continue;
+
+        const testAnalysis = analyzeYaku(testHand, [], ctx, maxHan);
+        const testCompleted = testAnalysis.filter(y => y.result.distance === 0);
+        const testResolved = resolveYakuConflicts(testCompleted);
+        if (testResolved.some(y => y.name === target.name)) {
+          acceptKeys.push(key);
+        }
+      }
+
+      if (acceptKeys.length > 0) {
+        const yakuDef = analysis.find(y => y.name === target.name);
+        return {
+          hand: sortTiles(hand13),
+          melds: [],
+          targetYaku: { name: target.name, han: target.han, reading: yakuDef?.reading || "", explain: yakuDef?.explain || "" },
+          acceptTiles: acceptKeys,
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
 const LEVELS = [
   { name: "Lv.1 基本", maxHan: 1, label: "1翻" },
   { name: "Lv.2 応用", maxHan: 3, label: "〜3翻" },
@@ -2026,6 +2102,221 @@ function getYakuBreakdown(yakuName, hand, ctx) {
   }
 }
 
+// ─── Tenpai Quiz Components ───
+
+const ALL_TILE_KEYS = (() => {
+  const keys = [];
+  for (const suit of ["m", "p", "s"])
+    for (let num = 1; num <= 9; num++) keys.push(`${suit}${num}`);
+  for (let num = 1; num <= 7; num++) keys.push(`z${num}`);
+  return keys;
+})();
+
+const TILE_GRID_ROWS = [
+  { label: "萬", keys: ALL_TILE_KEYS.filter(k => k[0] === "m") },
+  { label: "筒", keys: ALL_TILE_KEYS.filter(k => k[0] === "p") },
+  { label: "索", keys: ALL_TILE_KEYS.filter(k => k[0] === "s") },
+  { label: "字", keys: ALL_TILE_KEYS.filter(k => k[0] === "z") },
+];
+
+function TileSelectionGrid({ selected, onToggle, quizResult, correctKeys }) {
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      {TILE_GRID_ROWS.map(row => (
+        <div key={row.label} style={{ display: "flex", gap: 3, alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
+          <span style={{ fontSize: 10, color: "#6a7a5a", fontFamily: "sans-serif", width: 16, textAlign: "center", flexShrink: 0 }}>
+            {row.label}
+          </span>
+          {row.keys.map(key => {
+            const suit = key[0];
+            const num = parseInt(key.slice(1));
+            const tile = { suit, num, id: -1 };
+            const isSelected = selected.includes(key);
+            const isCorrect = correctKeys?.includes(key);
+
+            let wrapperStyle = {};
+            let showSelected = false;
+            if (quizResult) {
+              if (isCorrect && isSelected) {
+                wrapperStyle = { boxShadow: "0 0 0 2.5px #50c878", borderRadius: 6 };
+                showSelected = true;
+              } else if (isCorrect && !isSelected) {
+                wrapperStyle = {
+                  border: "2px dashed #50c878",
+                  borderRadius: 6,
+                  margin: -2,
+                };
+              } else if (!isCorrect && isSelected) {
+                wrapperStyle = { boxShadow: "0 0 0 2.5px #dc503c", borderRadius: 6 };
+                showSelected = true;
+              } else {
+                wrapperStyle = { opacity: 0.3 };
+              }
+            } else {
+              showSelected = isSelected;
+            }
+
+            return (
+              <div key={key} onClick={() => !quizResult && onToggle(key)} style={{
+                cursor: quizResult ? "default" : "pointer",
+                transition: "all 0.15s",
+                ...wrapperStyle,
+              }}>
+                <Tile tile={tile} small selected={showSelected} />
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onSubmit, quizResult, onNext, quizScore, acceptTiles }) {
+  return (
+    <div style={{
+      background: "rgba(0,0,0,0.25)", borderRadius: 10, padding: 16,
+      border: "1px solid rgba(200,166,76,0.2)",
+    }}>
+      {/* Instruction */}
+      <div style={{ fontSize: 13, color: "#c8a64c", fontWeight: 700, marginBottom: 8, letterSpacing: 1, textAlign: "center" }}>
+        以下の手牌で「{targetYaku.name}」が成立する待ち牌をすべて選んでください
+      </div>
+
+      {/* Target yaku badge */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+        <span style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          padding: "4px 14px", borderRadius: 20,
+          background: "rgba(232,167,53,0.15)", border: "1px solid rgba(232,167,53,0.4)",
+        }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#e8a735",
+            fontFamily: "'Noto Serif JP', serif" }}>{targetYaku.name}</span>
+          <span style={{ fontSize: 11, color: "#c8a64c", fontFamily: "sans-serif" }}>
+            {targetYaku.han >= 13 ? "役満" : `${targetYaku.han}翻`}
+          </span>
+        </span>
+      </div>
+
+      {/* 13-tile hand display */}
+      <div style={{
+        display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", alignItems: "flex-end",
+        background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "12px 8px", marginBottom: 16,
+      }}>
+        {quizHand.map(t => <Tile key={t.id} tile={t} />)}
+      </div>
+
+      {/* Tile selection grid */}
+      <div style={{ marginBottom: 16 }}>
+        <TileSelectionGrid
+          selected={quizSelected}
+          onToggle={onToggleTile}
+          quizResult={quizResult}
+          correctKeys={quizResult ? acceptTiles : null}
+        />
+      </div>
+
+      {/* Submit / Result */}
+      {!quizResult ? (
+        <div style={{ textAlign: "center" }}>
+          <button onClick={onSubmit} disabled={quizSelected.length === 0} style={{
+            padding: "8px 32px", fontSize: 14, borderRadius: 6, fontWeight: 700,
+            fontFamily: "'Noto Serif JP', serif", cursor: quizSelected.length === 0 ? "not-allowed" : "pointer",
+            border: "1px solid #e8a735",
+            background: quizSelected.length === 0 ? "rgba(0,0,0,0.2)" : "rgba(232,167,53,0.2)",
+            color: quizSelected.length === 0 ? "#5a6a4a" : "#e8a735", letterSpacing: 2,
+          }}>回答する</button>
+        </div>
+      ) : (
+        <div>
+          <div style={{
+            fontSize: 18, fontWeight: 700, marginBottom: 8, textAlign: "center",
+            color: quizResult.isCorrect ? "#50c878" : "#dc503c",
+            fontFamily: "'Noto Serif JP', serif",
+          }}>
+            {quizResult.isCorrect ? "正解！" : "不正解…"}
+          </div>
+
+          {/* Correct tiles display */}
+          <div style={{
+            padding: "8px 10px", marginBottom: 8, borderRadius: 6,
+            background: "rgba(80,200,120,0.08)", border: "1px solid rgba(80,200,120,0.2)",
+          }}>
+            <div style={{ fontSize: 12, color: "#50c878", fontWeight: 700, marginBottom: 6,
+              fontFamily: "'Noto Serif JP', serif" }}>
+              正解の待ち牌（{acceptTiles.length}種）
+            </div>
+            <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+              {acceptTiles.map(key => {
+                const suit = key[0];
+                const num = parseInt(key.slice(1));
+                return <MiniTile key={key} suit={suit} num={num} />;
+              })}
+            </div>
+          </div>
+
+          {/* Missed tiles */}
+          {quizResult.missed.length > 0 && (
+            <div style={{
+              padding: "6px 10px", marginBottom: 6, borderRadius: 6,
+              background: "rgba(80,200,120,0.05)", border: "1px solid rgba(80,200,120,0.15)",
+            }}>
+              <span style={{ fontSize: 11, color: "#50c878", fontFamily: "sans-serif" }}>
+                選び漏れ: {quizResult.missed.map(key => {
+                  const suit = key[0];
+                  const num = parseInt(key.slice(1));
+                  return suit === "z" ? HONOR_NAMES[num] : `${NUM_KANJI[num]}${SUITS[suit]}`;
+                }).join("、")}
+              </span>
+            </div>
+          )}
+
+          {/* Wrong tiles */}
+          {quizResult.wrong.length > 0 && (
+            <div style={{
+              padding: "6px 10px", marginBottom: 6, borderRadius: 6,
+              background: "rgba(220,80,60,0.08)", border: "1px solid rgba(220,80,60,0.15)",
+            }}>
+              <span style={{ fontSize: 11, color: "#dc503c", fontFamily: "sans-serif" }}>
+                不正解: {quizResult.wrong.map(key => {
+                  const suit = key[0];
+                  const num = parseInt(key.slice(1));
+                  return suit === "z" ? HONOR_NAMES[num] : `${NUM_KANJI[num]}${SUITS[suit]}`;
+                }).join("、")}
+              </span>
+            </div>
+          )}
+
+          {/* Yaku explanation */}
+          {targetYaku.explain && (
+            <div style={{
+              padding: "6px 10px", marginBottom: 8, borderRadius: 6,
+              background: "rgba(0,0,0,0.1)",
+            }}>
+              <span style={{ fontSize: 11, color: "#8a9a7a", fontFamily: "sans-serif" }}>
+                {targetYaku.explain}
+              </span>
+            </div>
+          )}
+
+          <div style={{ fontSize: 12, color: "#8a9a7a", marginBottom: 12, fontFamily: "sans-serif", textAlign: "center" }}>
+            スコア: {quizScore.correct} / {quizScore.total}
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <button onClick={onNext} style={{
+              padding: "8px 28px", fontSize: 14, borderRadius: 6, fontWeight: 700,
+              fontFamily: "'Noto Serif JP', serif", cursor: "pointer",
+              border: "1px solid #e8a735", background: "rgba(232,167,53,0.2)",
+              color: "#e8a735", letterSpacing: 2,
+            }}>次の問題</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Quiz Mode Components ───
 function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYaku, onSubmit, quizResult, onNext, quizScore, ctx, maxHan }) {
   const showNoYaku = maxHan >= 6;
@@ -2409,11 +2700,14 @@ export default function MahjongYakuTrainer() {
 
   // ─── Quiz Mode State ───
   const [mode, setMode] = useState("quiz"); // "trainer" | "quiz"
+  const [quizType, setQuizType] = useState("yaku"); // "yaku" | "tenpai"
   const [quizHand, setQuizHand] = useState([]);
   const [quizMelds, setQuizMelds] = useState([]);
   const [quizSelected, setQuizSelected] = useState([]);
   const [quizResult, setQuizResult] = useState(null);
   const [quizScore, setQuizScore] = useState({ correct: 0, total: 0 });
+  const [tenpaiTargetYaku, setTenpaiTargetYaku] = useState(null);
+  const [tenpaiAcceptTiles, setTenpaiAcceptTiles] = useState([]);
 
   const currentLevel = LEVELS[level];
   const ctx = useMemo(() => ({ seatWind, roundWind }), [seatWind, roundWind]);
@@ -2625,6 +2919,33 @@ export default function MahjongYakuTrainer() {
     setQuizMelds(q.melds);
     setQuizSelected([]);
     setQuizResult(null);
+    setTenpaiTargetYaku(null);
+    setTenpaiAcceptTiles([]);
+  }, [currentLevel, ctx]);
+
+  const startTenpaiQuiz = useCallback(() => {
+    // Try up to 3 times
+    for (let i = 0; i < 3; i++) {
+      const q = generateTenpaiQuizHand(currentLevel.maxHan, ctx);
+      if (q) {
+        setQuizHand(q.hand);
+        setQuizMelds(q.melds);
+        setTenpaiTargetYaku(q.targetYaku);
+        setTenpaiAcceptTiles(q.acceptTiles);
+        setQuizSelected([]);
+        setQuizResult(null);
+        return;
+      }
+    }
+    // All retries failed — fall back to yaku quiz
+    setQuizType("yaku");
+    setTenpaiTargetYaku(null);
+    setTenpaiAcceptTiles([]);
+    const fallback = generateQuizHand(currentLevel.maxHan, ctx);
+    setQuizHand(fallback.hand);
+    setQuizMelds(fallback.melds);
+    setQuizSelected([]);
+    setQuizResult(null);
   }, [currentLevel, ctx]);
 
   const toggleQuizYaku = useCallback((name) => {
@@ -2634,6 +2955,12 @@ export default function MahjongYakuTrainer() {
       if (name === "役なし") return ["役なし"];
       return [...prev.filter(n => n !== "役なし"), name];
     });
+  }, []);
+
+  const toggleQuizTile = useCallback((tileKey) => {
+    setQuizSelected(prev =>
+      prev.includes(tileKey) ? prev.filter(k => k !== tileKey) : [...prev, tileKey]
+    );
   }, []);
 
   const submitQuiz = useCallback(() => {
@@ -2659,19 +2986,75 @@ export default function MahjongYakuTrainer() {
     }));
   }, [quizCorrectYaku, quizSelected]);
 
+  const submitTenpaiQuiz = useCallback(() => {
+    const missed = tenpaiAcceptTiles.filter(k => !quizSelected.includes(k));
+    const wrong = quizSelected.filter(k => !tenpaiAcceptTiles.includes(k));
+    const isCorrect = missed.length === 0 && wrong.length === 0;
+
+    setQuizResult({ correctKeys: tenpaiAcceptTiles, missed, wrong, isCorrect });
+    setQuizScore(prev => ({
+      correct: prev.correct + (isCorrect ? 1 : 0),
+      total: prev.total + 1,
+    }));
+  }, [tenpaiAcceptTiles, quizSelected]);
+
   const nextQuiz = useCallback(() => {
-    startQuiz();
-  }, [startQuiz]);
+    if (quizType === "tenpai") {
+      startTenpaiQuiz();
+    } else {
+      startQuiz();
+    }
+  }, [quizType, startQuiz, startTenpaiQuiz]);
 
   const switchMode = useCallback((newMode) => {
     setMode(newMode);
     if (newMode === "quiz") {
+      setQuizType("yaku");
+      setTenpaiTargetYaku(null);
+      setTenpaiAcceptTiles([]);
       const q = generateQuizHand(currentLevel.maxHan, ctx);
       setQuizHand(q.hand);
       setQuizMelds(q.melds);
       setQuizSelected([]);
       setQuizResult(null);
       setQuizScore({ correct: 0, total: 0 });
+    }
+  }, [currentLevel, ctx]);
+
+  const switchQuizType = useCallback((newType) => {
+    setQuizSelected([]);
+    setQuizResult(null);
+    setQuizScore({ correct: 0, total: 0 });
+    if (newType === "tenpai") {
+      let found = false;
+      for (let i = 0; i < 3; i++) {
+        const q = generateTenpaiQuizHand(currentLevel.maxHan, ctx);
+        if (q) {
+          setQuizType("tenpai");
+          setQuizHand(q.hand);
+          setQuizMelds(q.melds);
+          setTenpaiTargetYaku(q.targetYaku);
+          setTenpaiAcceptTiles(q.acceptTiles);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        // Generation failed — stay on yaku quiz
+        setQuizType("yaku");
+        setTenpaiTargetYaku(null);
+        setTenpaiAcceptTiles([]);
+        const fallback = generateQuizHand(currentLevel.maxHan, ctx);
+        setQuizHand(fallback.hand);
+        setQuizMelds(fallback.melds);
+      }
+    } else {
+      setQuizType("yaku");
+      setTenpaiTargetYaku(null);
+      setTenpaiAcceptTiles([]);
+      const q = generateQuizHand(currentLevel.maxHan, ctx);
+      setQuizHand(q.hand);
+      setQuizMelds(q.melds);
     }
   }, [currentLevel, ctx]);
 
@@ -2694,7 +3077,9 @@ export default function MahjongYakuTrainer() {
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: 2,
           }}>麻雀役道場</h1>
           <p style={{ fontSize: 11, color: "#6a7a5a", margin: "2px 0 0", fontFamily: "sans-serif" }}>
-            {mode === "trainer" ? "手牌から狙える役を見極めよう" : "成立している役を当てよう"}</p>
+            {mode === "trainer" ? "手牌から狙える役を見極めよう"
+              : quizType === "tenpai" ? "待ち牌を見極めよう"
+              : "成立している役を当てよう"}</p>
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
           {/* Mode toggle */}
@@ -2708,12 +3093,44 @@ export default function MahjongYakuTrainer() {
               }}>{m.label}</button>
             ))}
           </div>
+          {/* Quiz type sub-toggle */}
+          {mode === "quiz" && (
+            <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", border: "1px solid #3a5a40" }}>
+              {[{ key: "yaku", label: "役" }, { key: "tenpai", label: "聴牌" }].map(qt => (
+                <button key={qt.key} onClick={() => switchQuizType(qt.key)} style={{
+                  padding: "4px 10px", fontSize: 11, border: "none",
+                  background: quizType === qt.key ? "rgba(160,112,208,0.2)" : "rgba(0,0,0,0.2)",
+                  color: quizType === qt.key ? "#b0a0e0" : "#7a9a6a", cursor: "pointer", fontFamily: "sans-serif",
+                  fontWeight: quizType === qt.key ? 700 : 400,
+                }}>{qt.label}</button>
+              ))}
+            </div>
+          )}
           {LEVELS.map((lv, i) => (
             <button key={i} onClick={() => {
               setLevel(i);
               if (mode === "quiz") {
-                const q = generateQuizHand(LEVELS[i].maxHan, ctx);
-                setQuizHand(q.hand); setQuizMelds(q.melds); setQuizSelected([]); setQuizResult(null); setQuizScore({ correct: 0, total: 0 });
+                setQuizSelected([]); setQuizResult(null); setQuizScore({ correct: 0, total: 0 });
+                if (quizType === "tenpai") {
+                  let found = false;
+                  for (let r = 0; r < 3; r++) {
+                    const q = generateTenpaiQuizHand(LEVELS[i].maxHan, ctx);
+                    if (q) {
+                      setQuizHand(q.hand); setQuizMelds(q.melds);
+                      setTenpaiTargetYaku(q.targetYaku); setTenpaiAcceptTiles(q.acceptTiles);
+                      found = true; break;
+                    }
+                  }
+                  if (!found) {
+                    setQuizType("yaku"); setTenpaiTargetYaku(null); setTenpaiAcceptTiles([]);
+                    const fb = generateQuizHand(LEVELS[i].maxHan, ctx);
+                    setQuizHand(fb.hand); setQuizMelds(fb.melds);
+                  }
+                } else {
+                  const q = generateQuizHand(LEVELS[i].maxHan, ctx);
+                  setQuizHand(q.hand); setQuizMelds(q.melds);
+                  setTenpaiTargetYaku(null); setTenpaiAcceptTiles([]);
+                }
               }
             }} style={{
               padding: "4px 10px", fontSize: 11, borderRadius: 4,
@@ -2722,7 +3139,7 @@ export default function MahjongYakuTrainer() {
               color: i === level ? "#e8a735" : "#7a9a6a", cursor: "pointer", fontFamily: "sans-serif",
             }}>{lv.name}</button>
           ))}
-          <button onClick={mode === "trainer" ? dealHand : startQuiz} style={{
+          <button onClick={mode === "trainer" ? dealHand : (quizType === "tenpai" ? startTenpaiQuiz : startQuiz)} style={{
             padding: "6px 14px", fontSize: 12, borderRadius: 4,
             border: "1px solid #e8a735", background: "rgba(232,167,53,0.15)",
             color: "#e8a735", cursor: "pointer", fontWeight: 600, fontFamily: "sans-serif",
@@ -2746,7 +3163,7 @@ export default function MahjongYakuTrainer() {
       </div>
 
       {/* Quiz Mode */}
-      {mode === "quiz" && quizHand.length > 0 && (
+      {mode === "quiz" && quizHand.length > 0 && quizType === "yaku" && (
         <QuizPanel
           quizHand={quizHand}
           quizMelds={quizMelds}
@@ -2759,6 +3176,19 @@ export default function MahjongYakuTrainer() {
           quizScore={quizScore}
           ctx={ctx}
           maxHan={currentLevel.maxHan}
+        />
+      )}
+      {mode === "quiz" && quizHand.length > 0 && quizType === "tenpai" && tenpaiTargetYaku && (
+        <TenpaiQuizPanel
+          quizHand={quizHand}
+          targetYaku={tenpaiTargetYaku}
+          quizSelected={quizSelected}
+          onToggleTile={toggleQuizTile}
+          onSubmit={submitTenpaiQuiz}
+          quizResult={quizResult}
+          onNext={nextQuiz}
+          quizScore={quizScore}
+          acceptTiles={tenpaiAcceptTiles}
         />
       )}
 
