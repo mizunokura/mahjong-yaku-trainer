@@ -14,6 +14,195 @@ const SUIT_BG = {
 const SUIT_BORDER = { m: "#d88a84", p: "#84a0d8", s: "#84d894", z: "#c4b896" };
 const SUIT_ICONS = { m: "漢", p: "●", s: "竹" };
 
+// ─── Theme System ───
+const _a = (hex, alpha) => {
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+};
+
+const THEMES = {
+  dark: {
+    name: "🌙",
+    fontMain: "'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif",
+    fontUI: "sans-serif",
+    pageBg: "linear-gradient(160deg, #0f2a1a 0%, #1a3a2a 40%, #162e20 100%)",
+    textPrimary: "#e0d8c4",
+    textAccent: "#c8a64c",
+    textSecondary: "#8a9a7a",
+    textMuted: "#6a7a5a",
+    textFaint: "#5a6a4a",
+    textInfo: "#7a8a6a",
+    textScore: "#b0a880",
+    textNote: "#b0a060",
+    textWrongDetail: "#9a7a7a",
+    textMentsu: "#8ab0d0",
+    accent: "#e8a735",
+    accentLight: "#f0c050",
+    targetBorder: "#f0c850",
+    success: "#50c878",
+    error: "#dc503c",
+    conditionText: "#b0a070",
+    conditionBorder: "#a0906a",
+    panelBg: "rgba(0,0,0,0.25)",
+    panelBgLight: "rgba(0,0,0,0.2)",
+    panelBgLighter: "rgba(0,0,0,0.15)",
+    panelBgSubtle: "rgba(0,0,0,0.1)",
+    panelBgFaint: "rgba(0,0,0,0.08)",
+    panelBorder: "rgba(200,166,76,0.2)",
+    panelBorderLight: "rgba(200,166,76,0.15)",
+    panelBorderFaint: "rgba(200,166,76,0.1)",
+    toggleBorder: "#3a5a40",
+    chipBg: "rgba(255,255,255,0.06)",
+    chipBorder: "rgba(255,255,255,0.1)",
+    chipText: "#a0b090",
+    rowBg: "rgba(255,255,255,0.03)",
+    rowDivider: "rgba(255,255,255,0.05)",
+    barBg: "rgba(255,255,255,0.08)",
+    previewBorder: "rgba(240,192,80,0.3)",
+    titleGradient: "linear-gradient(135deg, #e8a735, #f0d080)",
+    btnTsumoBg: "linear-gradient(135deg, #2a6a3a, #3a8a4a)",
+    btnTsumoColor: "#e0f0d0",
+    scorePanelBg: "linear-gradient(135deg, rgba(232,167,53,0.2), rgba(240,200,80,0.08))",
+    scorePanelBorder: "rgba(232,167,53,0.5)",
+    scorePanelShadow: "0 0 20px rgba(232,167,53,0.15)",
+    shantenTenpaiBg: "linear-gradient(135deg, rgba(80,200,120,0.15), rgba(80,200,120,0.05))",
+    barDefault: "linear-gradient(90deg, #4a7a5a, #6aaa7a)",
+    barComplete: "linear-gradient(90deg, #e8a735, #f0c050)",
+    barCondition: "linear-gradient(90deg, #a0906a, #c0b080)",
+    barCloser: "linear-gradient(90deg, #3a9a5a, #50c878)",
+    barFarther: "linear-gradient(90deg, #b04030, #dc503c)",
+    noYakuAccent: "#9080c0",
+    noYakuText: "#b0a0e0",
+    noYakuInactive: "#8088a0",
+    quizTypeAccent: "#a070d0",
+    quizTypeText: "#b0a0e0",
+    tileSelectedGlow: "0 0 16px rgba(240,192,80,0.7), 0 2px 4px rgba(0,0,0,0.3)",
+    tileDrawnGlow: "0 0 10px rgba(232,167,53,0.5), 0 2px 4px rgba(0,0,0,0.3)",
+    tileDefaultShadow: "0 2px 4px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.5)",
+    miniTileShadow: "0 1px 2px rgba(0,0,0,0.2)",
+  },
+  cafe: {
+    name: "☕",
+    fontMain: "'Zen Maru Gothic', 'Noto Serif JP', sans-serif",
+    fontUI: "'Zen Maru Gothic', sans-serif",
+    pageBg: "linear-gradient(160deg, #FDF5E6 0%, #F5ECD7 40%, #FFF8F0 100%)",
+    textPrimary: "#5A4A3A",
+    textAccent: "#B06070",
+    textSecondary: "#8A7A6A",
+    textMuted: "#A09080",
+    textFaint: "#B8A898",
+    textInfo: "#907A6A",
+    textScore: "#8A7060",
+    textNote: "#A08050",
+    textWrongDetail: "#A07060",
+    textMentsu: "#5A8AA0",
+    accent: "#D0708A",
+    accentLight: "#E8A0B0",
+    targetBorder: "#E090A0",
+    success: "#3AAA68",
+    error: "#C84030",
+    conditionText: "#A08060",
+    conditionBorder: "#C0A080",
+    panelBg: "rgba(160,120,80,0.08)",
+    panelBgLight: "rgba(160,120,80,0.06)",
+    panelBgLighter: "rgba(160,120,80,0.05)",
+    panelBgSubtle: "rgba(160,120,80,0.03)",
+    panelBgFaint: "rgba(160,120,80,0.02)",
+    panelBorder: "rgba(180,140,100,0.25)",
+    panelBorderLight: "rgba(180,140,100,0.2)",
+    panelBorderFaint: "rgba(180,140,100,0.15)",
+    toggleBorder: "#D4B896",
+    chipBg: "rgba(160,120,80,0.06)",
+    chipBorder: "rgba(160,120,80,0.15)",
+    chipText: "#907A6A",
+    rowBg: "rgba(160,120,80,0.03)",
+    rowDivider: "rgba(160,120,80,0.08)",
+    barBg: "rgba(160,120,80,0.1)",
+    previewBorder: "rgba(208,112,138,0.3)",
+    titleGradient: "linear-gradient(135deg, #D0708A, #E8A0B0)",
+    btnTsumoBg: "linear-gradient(135deg, #60B880, #80D0A0)",
+    btnTsumoColor: "#2A5A3A",
+    scorePanelBg: "linear-gradient(135deg, rgba(208,112,138,0.15), rgba(232,160,176,0.05))",
+    scorePanelBorder: "rgba(208,112,138,0.4)",
+    scorePanelShadow: "0 0 20px rgba(208,112,138,0.1)",
+    shantenTenpaiBg: "linear-gradient(135deg, rgba(58,170,104,0.12), rgba(58,170,104,0.04))",
+    barDefault: "linear-gradient(90deg, #90B090, #A0C8A0)",
+    barComplete: "linear-gradient(90deg, #D0708A, #E8A0B0)",
+    barCondition: "linear-gradient(90deg, #C0A080, #D8C0A0)",
+    barCloser: "linear-gradient(90deg, #40A060, #60C880)",
+    barFarther: "linear-gradient(90deg, #B05040, #D06050)",
+    noYakuAccent: "#8080A0",
+    noYakuText: "#7070A0",
+    noYakuInactive: "#A0A0B0",
+    quizTypeAccent: "#A080B0",
+    quizTypeText: "#8070A0",
+    tileSelectedGlow: "0 0 16px rgba(232,160,176,0.6), 0 2px 4px rgba(0,0,0,0.15)",
+    tileDrawnGlow: "0 0 10px rgba(208,112,138,0.4), 0 2px 4px rgba(0,0,0,0.15)",
+    tileDefaultShadow: "0 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.7)",
+    miniTileShadow: "0 1px 2px rgba(0,0,0,0.1)",
+  },
+  cyber: {
+    name: "💻️",
+    fontMain: "'M PLUS 1 Code', 'Courier New', monospace",
+    fontUI: "'M PLUS 1 Code', 'Courier New', monospace",
+    pageBg: "linear-gradient(160deg, #0a0e1a 0%, #0c1628 40%, #0a1020 100%)",
+    textPrimary: "#c0d0e8",
+    textAccent: "#40a0ff",
+    textSecondary: "#607090",
+    textMuted: "#4a6080",
+    textFaint: "#3a5070",
+    textInfo: "#506888",
+    textScore: "#5080b0",
+    textNote: "#4090d0",
+    textWrongDetail: "#806080",
+    textMentsu: "#50a0e0",
+    accent: "#00bbff",
+    accentLight: "#40d0ff",
+    targetBorder: "#30c0ff",
+    success: "#00e080",
+    error: "#ff2050",
+    conditionText: "#5090c0",
+    conditionBorder: "#3070a0",
+    panelBg: "rgba(0,30,60,0.5)",
+    panelBgLight: "rgba(0,20,50,0.4)",
+    panelBgLighter: "rgba(0,20,50,0.3)",
+    panelBgSubtle: "rgba(0,20,50,0.2)",
+    panelBgFaint: "rgba(0,20,50,0.15)",
+    panelBorder: "rgba(0,180,255,0.2)",
+    panelBorderLight: "rgba(0,180,255,0.15)",
+    panelBorderFaint: "rgba(0,180,255,0.1)",
+    toggleBorder: "#1a3050",
+    chipBg: "rgba(0,140,255,0.08)",
+    chipBorder: "rgba(0,140,255,0.2)",
+    chipText: "#5080a0",
+    rowBg: "rgba(0,100,200,0.05)",
+    rowDivider: "rgba(0,140,255,0.1)",
+    barBg: "rgba(0,140,255,0.12)",
+    previewBorder: "rgba(0,187,255,0.35)",
+    titleGradient: "linear-gradient(135deg, #00bbff, #00ff88)",
+    btnTsumoBg: "linear-gradient(135deg, #004060, #006090)",
+    btnTsumoColor: "#80e0ff",
+    scorePanelBg: "linear-gradient(135deg, rgba(0,187,255,0.15), rgba(0,255,136,0.05))",
+    scorePanelBorder: "rgba(0,187,255,0.4)",
+    scorePanelShadow: "0 0 20px rgba(0,187,255,0.12)",
+    shantenTenpaiBg: "linear-gradient(135deg, rgba(0,224,128,0.12), rgba(0,224,128,0.04))",
+    barDefault: "linear-gradient(90deg, #1a4060, #2a6090)",
+    barComplete: "linear-gradient(90deg, #00bbff, #40d0ff)",
+    barCondition: "linear-gradient(90deg, #3070a0, #4090c0)",
+    barCloser: "linear-gradient(90deg, #00a060, #00e080)",
+    barFarther: "linear-gradient(90deg, #c01040, #ff2050)",
+    noYakuAccent: "#6060c0",
+    noYakuText: "#7070e0",
+    noYakuInactive: "#405080",
+    quizTypeAccent: "#6050d0",
+    quizTypeText: "#8070ff",
+    tileSelectedGlow: "0 0 18px rgba(0,187,255,0.7), 0 0 4px rgba(0,255,136,0.3), 0 2px 4px rgba(0,0,0,0.4)",
+    tileDrawnGlow: "0 0 12px rgba(0,187,255,0.5), 0 2px 4px rgba(0,0,0,0.4)",
+    tileDefaultShadow: "0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)",
+    miniTileShadow: "0 1px 2px rgba(0,0,0,0.3)",
+  },
+};
+
 function tileKey(t) { return `${t.suit}${t.num}`; }
 function tileSortVal(t) {
   const suitOrder = { m: 0, p: 1, s: 2, z: 3 };
@@ -1607,37 +1796,39 @@ function computeSummary(list) {
 }
 
 // ─── Group display config ───
-const GROUP_STYLES = {
-  kantsu:  { label: "槓子", color: "#e8a735", bg: "rgba(232,167,53,0.15)", border: "rgba(232,167,53,0.4)" },
-  koutsu:  { label: "刻子", color: "#e87040", bg: "rgba(232,112,64,0.12)", border: "rgba(232,112,64,0.35)" },
-  shuntsu: { label: "順子", color: "#4090e0", bg: "rgba(64,144,224,0.12)", border: "rgba(64,144,224,0.35)" },
-  toitsu:  { label: "対子", color: "#a070d0", bg: "rgba(160,112,208,0.12)", border: "rgba(160,112,208,0.35)" },
-  tatsu:   { label: "搭子", color: "#70b0a0", bg: "rgba(112,176,160,0.10)", border: "rgba(112,176,160,0.30)" },
-  isolated:{ label: "孤立", color: "#6a7a5a", bg: "rgba(0,0,0,0.08)", border: "rgba(106,122,90,0.25)" },
-};
+function getGroupStyles(theme) {
+  return {
+    kantsu:  { label: "槓子", color: "#e8a735", bg: "rgba(232,167,53,0.15)", border: "rgba(232,167,53,0.4)" },
+    koutsu:  { label: "刻子", color: "#e87040", bg: "rgba(232,112,64,0.12)", border: "rgba(232,112,64,0.35)" },
+    shuntsu: { label: "順子", color: "#4090e0", bg: "rgba(64,144,224,0.12)", border: "rgba(64,144,224,0.35)" },
+    toitsu:  { label: "対子", color: "#a070d0", bg: "rgba(160,112,208,0.12)", border: "rgba(160,112,208,0.35)" },
+    tatsu:   { label: "搭子", color: "#70b0a0", bg: "rgba(112,176,160,0.10)", border: "rgba(112,176,160,0.30)" },
+    isolated:{ label: "孤立", color: theme.textMuted, bg: theme.panelBgFaint, border: _a(theme.textMuted, 0.25) },
+  };
+}
 
 // ─── Components ───
 
-function Tile({ tile, onClick, selected, drawn, small, dimmed }) {
+function Tile({ tile, onClick, selected, drawn, small, dimmed, theme: th }) {
   const color = tile.suit === "z"
     ? (tile.num === 5 ? "#888" : tile.num === 6 ? "#27713a" : tile.num === 7 ? "#b8282e" : "#3a3226")
     : SUIT_COLORS[tile.suit];
   const bg = selected
     ? SUIT_BG[tile.suit].selected
     : SUIT_BG[tile.suit].normal;
-  const borderColor = selected ? "#f0c050" : drawn ? "#e8a735" : SUIT_BORDER[tile.suit];
+  const borderColor = selected ? (th?.accentLight || "#f0c050") : drawn ? (th?.accent || "#e8a735") : SUIT_BORDER[tile.suit];
   const icon = SUIT_ICONS[tile.suit];
   return (
     <div onClick={onClick} style={{
       width: small ? 32 : 44, height: small ? 44 : 62,
       background: bg,
       borderRadius: 5,
-      border: selected ? `2px solid #f0c050` : drawn ? `2px solid #e8a735` : `1px solid ${borderColor}`,
+      border: selected ? `2px solid ${th?.accentLight || "#f0c050"}` : drawn ? `2px solid ${th?.accent || "#e8a735"}` : `1px solid ${borderColor}`,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       cursor: onClick ? "pointer" : "default",
-      boxShadow: selected ? "0 0 16px rgba(240,192,80,0.7), 0 2px 4px rgba(0,0,0,0.3)"
-        : drawn ? "0 0 10px rgba(232,167,53,0.5), 0 2px 4px rgba(0,0,0,0.3)"
-        : "0 2px 4px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.5)",
+      boxShadow: selected ? (th?.tileSelectedGlow || "0 0 16px rgba(240,192,80,0.7), 0 2px 4px rgba(0,0,0,0.3)")
+        : drawn ? (th?.tileDrawnGlow || "0 0 10px rgba(232,167,53,0.5), 0 2px 4px rgba(0,0,0,0.3)")
+        : (th?.tileDefaultShadow || "0 2px 4px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.5)"),
       transition: "all 0.15s ease",
       transform: selected ? "translateY(-12px)" : drawn ? "translateY(-6px)" : "none",
       opacity: dimmed ? 0.4 : 1, userSelect: "none", flexShrink: 0,
@@ -1646,19 +1837,19 @@ function Tile({ tile, onClick, selected, drawn, small, dimmed }) {
       {icon && (
         <span style={{ position: "absolute", top: small ? 1 : 2, right: small ? 2 : 3,
           fontSize: small ? 7 : 9, color, opacity: 0.4, lineHeight: 1,
-          fontFamily: "sans-serif" }}>{icon}</span>
+          fontFamily: "var(--font-ui)" }}>{icon}</span>
       )}
       <span style={{ fontSize: small ? 16 : 22, fontWeight: 700, color, lineHeight: 1.1,
-        fontFamily: "'Noto Serif JP', 'Hiragino Mincho ProN', serif" }}>{tileLabel(tile)}</span>
+        fontFamily: "var(--font-main)" }}>{tileLabel(tile)}</span>
       {tile.suit !== "z" && (
         <span style={{ fontSize: small ? 8 : 10, color, opacity: 0.7, lineHeight: 1,
-          fontFamily: "'Noto Serif JP', serif" }}>{tileSuitLabel(tile)}</span>
+          fontFamily: "var(--font-main)" }}>{tileSuitLabel(tile)}</span>
       )}
     </div>
   );
 }
 
-function MiniTile({ suit, num }) {
+function MiniTile({ suit, num, theme: th }) {
   const label = suit === "z" ? HONOR_NAMES[num] : NUM_KANJI[num];
   const sub = suit === "z" ? "" : SUITS[suit];
   const color = suit === "z"
@@ -1672,12 +1863,12 @@ function MiniTile({ suit, num }) {
       background: SUIT_BG[suit].normal,
       border: `1px solid ${SUIT_BORDER[suit]}`,
       fontSize: 13, fontWeight: 700, color, lineHeight: 1,
-      fontFamily: "'Noto Serif JP', serif",
-      boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+      fontFamily: "var(--font-main)",
+      boxShadow: th?.miniTileShadow || "0 1px 2px rgba(0,0,0,0.2)",
       flexShrink: 0, position: "relative",
     }}>
       {icon && <span style={{ position: "absolute", top: 0, right: 1,
-        fontSize: 5, color, opacity: 0.4, fontFamily: "sans-serif" }}>{icon}</span>}
+        fontSize: 5, color, opacity: 0.4, fontFamily: "var(--font-ui)" }}>{icon}</span>}
       {label}
       {sub && <span style={{ position: "absolute", bottom: 1, fontSize: 6,
         color, opacity: 0.6 }}>{sub}</span>}
@@ -1689,7 +1880,7 @@ function HintSection({ label, color, children }) {
   if (!children || (Array.isArray(children) && children.length === 0)) return null;
   return (
     <div style={{ marginTop: 6 }}>
-      <div style={{ fontSize: 9, fontWeight: 600, color, fontFamily: "sans-serif",
+      <div style={{ fontSize: 9, fontWeight: 600, color, fontFamily: "var(--font-ui)",
         marginBottom: 3, letterSpacing: 0.5 }}>{label}</div>
       <div style={{ display: "flex", gap: 3, flexWrap: "wrap", alignItems: "center" }}>
         {children}
@@ -1698,18 +1889,18 @@ function HintSection({ label, color, children }) {
   );
 }
 
-function MeldGroup({ meld, preview }) {
+function MeldGroup({ meld, preview, theme: th }) {
   return (
     <div style={{
       display: "flex", gap: 2, padding: "4px 6px",
-      background: preview ? "rgba(232,167,53,0.15)" : "rgba(0,0,0,0.15)",
+      background: preview ? _a(th.accent, 0.15) : th.panelBgLighter,
       borderRadius: 6,
-      border: preview ? "1px dashed rgba(232,167,53,0.4)" : "1px solid transparent",
+      border: preview ? `1px dashed ${_a(th.accent, 0.4)}` : "1px solid transparent",
     }}>
-      {meld.tiles.map((t, i) => <Tile key={i} tile={t} small />)}
+      {meld.tiles.map((t, i) => <Tile key={i} tile={t} small theme={th} />)}
       <span style={{
-        fontSize: 10, color: preview ? "#e8a735" : "#c8a64c", alignSelf: "flex-end",
-        fontFamily: "sans-serif", marginLeft: 2,
+        fontSize: 10, color: preview ? th.accent : th.textAccent, alignSelf: "flex-end",
+        fontFamily: "var(--font-ui)", marginLeft: 2,
       }}>
         {meld.type === "pon" ? "ポン" : "チー"}{preview && " ?"}
       </span>
@@ -1717,7 +1908,7 @@ function MeldGroup({ meld, preview }) {
   );
 }
 
-function HandDecomposition({ groups }) {
+function HandDecomposition({ groups, theme: th, groupStyles: gs }) {
   if (!groups || groups.length === 0) return null;
 
   const mentsuCount = groups.filter(g => ["kantsu", "koutsu", "shuntsu"].includes(g.type)).length;
@@ -1727,29 +1918,29 @@ function HandDecomposition({ groups }) {
   return (
     <div style={{
       marginBottom: 12, padding: "10px 12px",
-      background: "rgba(0,0,0,0.15)", borderRadius: 8,
-      border: "1px solid rgba(200,166,76,0.1)",
+      background: th.panelBgLighter, borderRadius: 8,
+      border: `1px solid ${th.panelBorderFaint}`,
     }}>
       {/* Summary line */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         marginBottom: 8, flexWrap: "wrap", gap: 6,
       }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#c8a64c",
-          fontFamily: "sans-serif", letterSpacing: 1 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: th.textAccent,
+          fontFamily: "var(--font-ui)", letterSpacing: 1 }}>
           手牌構成
         </span>
-        <div style={{ display: "flex", gap: 8, fontSize: 10, fontFamily: "sans-serif" }}>
-          {mentsuCount > 0 && <span style={{ color: "#8ab0d0" }}>面子×{mentsuCount}</span>}
-          {toitsuCount > 0 && <span style={{ color: "#a070d0" }}>対子×{toitsuCount}</span>}
-          {tatsuCount > 0 && <span style={{ color: "#70b0a0" }}>搭子×{tatsuCount}</span>}
+        <div style={{ display: "flex", gap: 8, fontSize: 10, fontFamily: "var(--font-ui)" }}>
+          {mentsuCount > 0 && <span style={{ color: th.textMentsu }}>面子×{mentsuCount}</span>}
+          {toitsuCount > 0 && <span style={{ color: gs.toitsu.color }}>対子×{toitsuCount}</span>}
+          {tatsuCount > 0 && <span style={{ color: gs.tatsu.color }}>搭子×{tatsuCount}</span>}
         </div>
       </div>
 
       {/* Group tiles */}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "flex-start" }}>
         {groups.map((g, gi) => {
-          const style = GROUP_STYLES[g.type] || GROUP_STYLES.isolated;
+          const style = gs[g.type] || gs.isolated;
           return (
             <div key={gi} style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
@@ -1760,12 +1951,12 @@ function HandDecomposition({ groups }) {
                 border: `1px solid ${style.border}`,
               }}>
                 {(g.tiles || []).map((t, ti) => (
-                  <Tile key={ti} tile={t} small />
+                  <Tile key={ti} tile={t} small theme={th} />
                 ))}
               </div>
               <span style={{
                 fontSize: 9, fontWeight: 600, color: style.color,
-                fontFamily: "sans-serif", letterSpacing: 0.5,
+                fontFamily: "var(--font-ui)", letterSpacing: 0.5,
               }}>
                 {style.label}
                 {g.type === "tatsu" && g.subtype ? `(${g.subtype})` : ""}
@@ -1778,34 +1969,34 @@ function HandDecomposition({ groups }) {
   );
 }
 
-function DiffBadge({ summary }) {
+function DiffBadge({ summary, theme: th }) {
   if (!summary) return null;
   const up = summary.closer + summary.newCount;
   const down = summary.farther + summary.goneCount;
   if (up === 0 && down === 0) return null;
   return (
-    <div style={{ display: "flex", gap: 8, fontSize: 11, fontFamily: "sans-serif" }}>
-      {up > 0 && <span style={{ color: "#50c878", fontWeight: 600 }}>▲{up}役</span>}
-      {down > 0 && <span style={{ color: "#dc503c", fontWeight: 600 }}>▼{down}役</span>}
+    <div style={{ display: "flex", gap: 8, fontSize: 11, fontFamily: "var(--font-ui)" }}>
+      {up > 0 && <span style={{ color: th.success, fontWeight: 600 }}>▲{up}役</span>}
+      {down > 0 && <span style={{ color: th.error, fontWeight: 600 }}>▼{down}役</span>}
     </div>
   );
 }
 
-function ScorePanel({ resolvedYaku, totalHan, fu, scoreInfo }) {
+function ScorePanel({ resolvedYaku, totalHan, fu, scoreInfo, theme: th }) {
   return (
     <div style={{
-      background: "linear-gradient(135deg, rgba(232,167,53,0.2), rgba(240,200,80,0.08))",
-      border: "1px solid rgba(232,167,53,0.5)",
+      background: th.scorePanelBg,
+      border: `1px solid ${th.scorePanelBorder}`,
       borderRadius: 8, padding: "12px 16px", marginBottom: 12,
-      boxShadow: "0 0 20px rgba(232,167,53,0.15)",
+      boxShadow: th.scorePanelShadow,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 20, fontWeight: 700, color: "#f0c050",
-          fontFamily: "'Noto Serif JP', serif" }}>和了</span>
+        <span style={{ fontSize: 20, fontWeight: 700, color: th.accentLight,
+          fontFamily: "var(--font-main)" }}>和了</span>
         {scoreInfo.label && (
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#e8a735",
-            fontFamily: "sans-serif", padding: "2px 10px", borderRadius: 4,
-            background: "rgba(232,167,53,0.2)", border: "1px solid rgba(232,167,53,0.3)",
+          <span style={{ fontSize: 14, fontWeight: 700, color: th.accent,
+            fontFamily: "var(--font-ui)", padding: "2px 10px", borderRadius: 4,
+            background: _a(th.accent, 0.2), border: `1px solid ${_a(th.accent, 0.3)}`,
           }}>{scoreInfo.label}</span>
         )}
       </div>
@@ -1813,22 +2004,22 @@ function ScorePanel({ resolvedYaku, totalHan, fu, scoreInfo }) {
         {resolvedYaku.map(y => (
           <span key={y.name} style={{
             padding: "2px 8px", borderRadius: 4,
-            background: "rgba(232,167,53,0.12)", border: "1px solid rgba(232,167,53,0.25)",
-            fontSize: 12, color: "#e8a735", fontFamily: "sans-serif", fontWeight: 600,
+            background: _a(th.accent, 0.12), border: `1px solid ${_a(th.accent, 0.25)}`,
+            fontSize: 12, color: th.accent, fontFamily: "var(--font-ui)", fontWeight: 600,
           }}>{y.name} {y.han >= 13 ? "役満" : `${y.han}翻`}</span>
         ))}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap",
-        fontSize: 12, color: "#b0a880", fontFamily: "sans-serif" }}>
+        fontSize: 12, color: th.textScore, fontFamily: "var(--font-ui)" }}>
         <span>{totalHan}翻 {fu}符</span>
-        <span style={{ color: "#5a6a4a" }}>→</span>
-        <span style={{ fontSize: 11, color: "#8a9a7a" }}>親</span>
-        <span style={{ fontSize: 20, fontWeight: 700, color: "#f0c050" }}>
+        <span style={{ color: th.textFaint }}>→</span>
+        <span style={{ fontSize: 11, color: th.textSecondary }}>親</span>
+        <span style={{ fontSize: 20, fontWeight: 700, color: th.accentLight }}>
           {scoreInfo.dealer.toLocaleString()}点
         </span>
-        <span style={{ color: "#5a6a4a" }}>|</span>
-        <span style={{ fontSize: 11, color: "#8a9a7a" }}>子</span>
-        <span style={{ fontSize: 16, fontWeight: 700, color: "#c8a64c" }}>
+        <span style={{ color: th.textFaint }}>|</span>
+        <span style={{ fontSize: 11, color: th.textSecondary }}>子</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: th.textAccent }}>
           {scoreInfo.child.toLocaleString()}点
         </span>
       </div>
@@ -1836,7 +2027,7 @@ function ScorePanel({ resolvedYaku, totalHan, fu, scoreInfo }) {
   );
 }
 
-function ShantenPanel({ shanten, acceptTiles }) {
+function ShantenPanel({ shanten, acceptTiles, theme: th }) {
   if (shanten > 1 || shanten < 0 || acceptTiles.length === 0) return null;
 
   const totalRemaining = acceptTiles.reduce((s, t) => s + t.remaining, 0);
@@ -1845,29 +2036,27 @@ function ShantenPanel({ shanten, acceptTiles }) {
   return (
     <div style={{
       marginBottom: 12, padding: "10px 12px",
-      background: isTenpai
-        ? "linear-gradient(135deg, rgba(80,200,120,0.15), rgba(80,200,120,0.05))"
-        : "rgba(0,0,0,0.15)",
+      background: isTenpai ? th.shantenTenpaiBg : th.panelBgLighter,
       borderRadius: 8,
       border: isTenpai
-        ? "1px solid rgba(80,200,120,0.4)"
-        : "1px solid rgba(200,166,76,0.15)",
+        ? `1px solid ${_a(th.success, 0.4)}`
+        : `1px solid ${th.panelBorderLight}`,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
         <span style={{
           fontSize: 16, fontWeight: 700,
-          color: isTenpai ? "#50c878" : "#c8a64c",
-          fontFamily: "'Noto Serif JP', serif",
+          color: isTenpai ? th.success : th.textAccent,
+          fontFamily: "var(--font-main)",
         }}>{isTenpai ? "聴牌" : "一向聴"}</span>
-        <span style={{ fontSize: 11, color: "#8a9a7a", fontFamily: "sans-serif" }}>
+        <span style={{ fontSize: 11, color: th.textSecondary, fontFamily: "var(--font-ui)" }}>
           {isTenpai ? "待ち" : "受入"} {acceptTiles.length}種 {totalRemaining}枚
         </span>
       </div>
       <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "flex-end" }}>
         {acceptTiles.map((t, i) => (
           <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-            <MiniTile suit={t.suit} num={t.num} />
-            <span style={{ fontSize: 8, color: "#6a7a5a", fontFamily: "sans-serif" }}>
+            <MiniTile suit={t.suit} num={t.num} theme={th} />
+            <span style={{ fontSize: 8, color: th.textMuted, fontFamily: "var(--font-ui)" }}>
               ×{t.remaining}
             </span>
           </div>
@@ -2119,13 +2308,13 @@ const TILE_GRID_ROWS = [
   { label: "字", keys: ALL_TILE_KEYS.filter(k => k[0] === "z") },
 ];
 
-function TileSelectionGrid({ selected, onToggle, quizResult, correctKeys }) {
+function TileSelectionGrid({ selected, onToggle, quizResult, correctKeys, theme: th }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       {TILE_GRID_ROWS.map(row => (
         <div key={row.label} style={{ display: "flex", gap: 3, alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
-          <span style={{ fontSize: 10, color: "#6a7a5a", fontFamily: "sans-serif", width: 16, textAlign: "center", flexShrink: 0 }}>
+          <span style={{ fontSize: 10, color: th.textMuted, fontFamily: "var(--font-ui)", width: 16, textAlign: "center", flexShrink: 0 }}>
             {row.label}
           </span>
           {row.keys.map(key => {
@@ -2139,16 +2328,16 @@ function TileSelectionGrid({ selected, onToggle, quizResult, correctKeys }) {
             let showSelected = false;
             if (quizResult) {
               if (isCorrect && isSelected) {
-                wrapperStyle = { boxShadow: "0 0 0 2.5px #50c878", borderRadius: 6 };
+                wrapperStyle = { boxShadow: `0 0 0 2.5px ${th.success}`, borderRadius: 6 };
                 showSelected = true;
               } else if (isCorrect && !isSelected) {
                 wrapperStyle = {
-                  border: "2px dashed #50c878",
+                  border: `2px dashed ${th.success}`,
                   borderRadius: 6,
                   margin: -2,
                 };
               } else if (!isCorrect && isSelected) {
-                wrapperStyle = { boxShadow: "0 0 0 2.5px #dc503c", borderRadius: 6 };
+                wrapperStyle = { boxShadow: `0 0 0 2.5px ${th.error}`, borderRadius: 6 };
                 showSelected = true;
               } else {
                 wrapperStyle = { opacity: 0.3 };
@@ -2163,7 +2352,7 @@ function TileSelectionGrid({ selected, onToggle, quizResult, correctKeys }) {
                 transition: "all 0.15s",
                 ...wrapperStyle,
               }}>
-                <Tile tile={tile} small selected={showSelected} />
+                <Tile tile={tile} small selected={showSelected} theme={th} />
               </div>
             );
           })}
@@ -2173,14 +2362,14 @@ function TileSelectionGrid({ selected, onToggle, quizResult, correctKeys }) {
   );
 }
 
-function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onSubmit, quizResult, onNext, quizScore, acceptTiles }) {
+function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onSubmit, quizResult, onNext, quizScore, acceptTiles, theme: th }) {
   return (
     <div style={{
-      background: "rgba(0,0,0,0.25)", borderRadius: 10, padding: 16,
-      border: "1px solid rgba(200,166,76,0.2)",
+      background: th.panelBg, borderRadius: 10, padding: 16,
+      border: `1px solid ${th.panelBorder}`,
     }}>
       {/* Instruction */}
-      <div style={{ fontSize: 13, color: "#c8a64c", fontWeight: 700, marginBottom: 8, letterSpacing: 1, textAlign: "center" }}>
+      <div style={{ fontSize: 13, color: th.textAccent, fontWeight: 700, marginBottom: 8, letterSpacing: 1, textAlign: "center" }}>
         以下の手牌で「{targetYaku.name}」が成立する待ち牌をすべて選んでください
       </div>
 
@@ -2189,11 +2378,11 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
         <span style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           padding: "4px 14px", borderRadius: 20,
-          background: "rgba(232,167,53,0.15)", border: "1px solid rgba(232,167,53,0.4)",
+          background: _a(th.accent, 0.15), border: `1px solid ${_a(th.accent, 0.4)}`,
         }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: "#e8a735",
-            fontFamily: "'Noto Serif JP', serif" }}>{targetYaku.name}</span>
-          <span style={{ fontSize: 11, color: "#c8a64c", fontFamily: "sans-serif" }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: th.accent,
+            fontFamily: "var(--font-main)" }}>{targetYaku.name}</span>
+          <span style={{ fontSize: 11, color: th.textAccent, fontFamily: "var(--font-ui)" }}>
             {targetYaku.han >= 13 ? "役満" : `${targetYaku.han}翻`}
           </span>
         </span>
@@ -2202,9 +2391,9 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
       {/* 13-tile hand display */}
       <div style={{
         display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", alignItems: "flex-end",
-        background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "12px 8px", marginBottom: 16,
+        background: th.panelBgLight, borderRadius: 8, padding: "12px 8px", marginBottom: 16,
       }}>
-        {quizHand.map(t => <Tile key={t.id} tile={t} />)}
+        {quizHand.map(t => <Tile key={t.id} tile={t} theme={th} />)}
       </div>
 
       {/* Tile selection grid */}
@@ -2214,6 +2403,7 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
           onToggle={onToggleTile}
           quizResult={quizResult}
           correctKeys={quizResult ? acceptTiles : null}
+          theme={th}
         />
       </div>
 
@@ -2222,18 +2412,18 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
         <div style={{ textAlign: "center" }}>
           <button onClick={onSubmit} disabled={quizSelected.length === 0} style={{
             padding: "8px 32px", fontSize: 14, borderRadius: 6, fontWeight: 700,
-            fontFamily: "'Noto Serif JP', serif", cursor: quizSelected.length === 0 ? "not-allowed" : "pointer",
-            border: "1px solid #e8a735",
-            background: quizSelected.length === 0 ? "rgba(0,0,0,0.2)" : "rgba(232,167,53,0.2)",
-            color: quizSelected.length === 0 ? "#5a6a4a" : "#e8a735", letterSpacing: 2,
+            fontFamily: "var(--font-main)", cursor: quizSelected.length === 0 ? "not-allowed" : "pointer",
+            border: `1px solid ${th.accent}`,
+            background: quizSelected.length === 0 ? th.panelBgLight : _a(th.accent, 0.2),
+            color: quizSelected.length === 0 ? th.textFaint : th.accent, letterSpacing: 2,
           }}>回答する</button>
         </div>
       ) : (
         <div>
           <div style={{
             fontSize: 18, fontWeight: 700, marginBottom: 8, textAlign: "center",
-            color: quizResult.isCorrect ? "#50c878" : "#dc503c",
-            fontFamily: "'Noto Serif JP', serif",
+            color: quizResult.isCorrect ? th.success : th.error,
+            fontFamily: "var(--font-main)",
           }}>
             {quizResult.isCorrect ? "正解！" : "不正解…"}
           </div>
@@ -2241,17 +2431,17 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
           {/* Correct tiles display */}
           <div style={{
             padding: "8px 10px", marginBottom: 8, borderRadius: 6,
-            background: "rgba(80,200,120,0.08)", border: "1px solid rgba(80,200,120,0.2)",
+            background: _a(th.success, 0.08), border: `1px solid ${_a(th.success, 0.2)}`,
           }}>
-            <div style={{ fontSize: 12, color: "#50c878", fontWeight: 700, marginBottom: 6,
-              fontFamily: "'Noto Serif JP', serif" }}>
+            <div style={{ fontSize: 12, color: th.success, fontWeight: 700, marginBottom: 6,
+              fontFamily: "var(--font-main)" }}>
               正解の待ち牌（{acceptTiles.length}種）
             </div>
             <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
               {acceptTiles.map(key => {
                 const suit = key[0];
                 const num = parseInt(key.slice(1));
-                return <MiniTile key={key} suit={suit} num={num} />;
+                return <MiniTile key={key} suit={suit} num={num} theme={th} />;
               })}
             </div>
           </div>
@@ -2260,9 +2450,9 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
           {quizResult.missed.length > 0 && (
             <div style={{
               padding: "6px 10px", marginBottom: 6, borderRadius: 6,
-              background: "rgba(80,200,120,0.05)", border: "1px solid rgba(80,200,120,0.15)",
+              background: _a(th.success, 0.05), border: `1px solid ${_a(th.success, 0.15)}`,
             }}>
-              <span style={{ fontSize: 11, color: "#50c878", fontFamily: "sans-serif" }}>
+              <span style={{ fontSize: 11, color: th.success, fontFamily: "var(--font-ui)" }}>
                 選び漏れ: {quizResult.missed.map(key => {
                   const suit = key[0];
                   const num = parseInt(key.slice(1));
@@ -2276,9 +2466,9 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
           {quizResult.wrong.length > 0 && (
             <div style={{
               padding: "6px 10px", marginBottom: 6, borderRadius: 6,
-              background: "rgba(220,80,60,0.08)", border: "1px solid rgba(220,80,60,0.15)",
+              background: _a(th.error, 0.08), border: `1px solid ${_a(th.error, 0.15)}`,
             }}>
-              <span style={{ fontSize: 11, color: "#dc503c", fontFamily: "sans-serif" }}>
+              <span style={{ fontSize: 11, color: th.error, fontFamily: "var(--font-ui)" }}>
                 不正解: {quizResult.wrong.map(key => {
                   const suit = key[0];
                   const num = parseInt(key.slice(1));
@@ -2292,23 +2482,23 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
           {targetYaku.explain && (
             <div style={{
               padding: "6px 10px", marginBottom: 8, borderRadius: 6,
-              background: "rgba(0,0,0,0.1)",
+              background: th.panelBgSubtle,
             }}>
-              <span style={{ fontSize: 11, color: "#8a9a7a", fontFamily: "sans-serif" }}>
+              <span style={{ fontSize: 11, color: th.textSecondary, fontFamily: "var(--font-ui)" }}>
                 {targetYaku.explain}
               </span>
             </div>
           )}
 
-          <div style={{ fontSize: 12, color: "#8a9a7a", marginBottom: 12, fontFamily: "sans-serif", textAlign: "center" }}>
+          <div style={{ fontSize: 12, color: th.textSecondary, marginBottom: 12, fontFamily: "var(--font-ui)", textAlign: "center" }}>
             スコア: {quizScore.correct} / {quizScore.total}
           </div>
           <div style={{ textAlign: "center" }}>
             <button onClick={onNext} style={{
               padding: "8px 28px", fontSize: 14, borderRadius: 6, fontWeight: 700,
-              fontFamily: "'Noto Serif JP', serif", cursor: "pointer",
-              border: "1px solid #e8a735", background: "rgba(232,167,53,0.2)",
-              color: "#e8a735", letterSpacing: 2,
+              fontFamily: "var(--font-main)", cursor: "pointer",
+              border: `1px solid ${th.accent}`, background: _a(th.accent, 0.2),
+              color: th.accent, letterSpacing: 2,
             }}>次の問題</button>
           </div>
         </div>
@@ -2318,27 +2508,27 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
 }
 
 // ─── Quiz Mode Components ───
-function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYaku, onSubmit, quizResult, onNext, quizScore, ctx, maxHan }) {
+function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYaku, onSubmit, quizResult, onNext, quizScore, ctx, maxHan, theme: th }) {
   const showNoYaku = maxHan >= 6;
   return (
     <div style={{
-      background: "rgba(0,0,0,0.25)", borderRadius: 10, padding: 16,
-      border: "1px solid rgba(200,166,76,0.2)",
+      background: th.panelBg, borderRadius: 10, padding: 16,
+      border: `1px solid ${th.panelBorder}`,
     }}>
       {/* Quiz hand display */}
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 13, color: "#c8a64c", fontWeight: 700, marginBottom: 8, letterSpacing: 1 }}>
+        <div style={{ fontSize: 13, color: th.textAccent, fontWeight: 700, marginBottom: 8, letterSpacing: 1 }}>
           {showNoYaku ? "この手牌で成立している役を全て選んでください（なければ「役なし」）" : "この手牌で成立している役を全て選んでください"}
         </div>
         <div style={{
           display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", alignItems: "flex-end",
-          background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "12px 8px",
+          background: th.panelBgLight, borderRadius: 8, padding: "12px 8px",
         }}>
           {quizHand.map(t => (
-            <Tile key={t.id} tile={t} />
+            <Tile key={t.id} tile={t} theme={th} />
           ))}
           {quizMelds.length > 0 && <div style={{ width: 12 }} />}
-          {quizMelds.map((m, i) => <MeldGroup key={i} meld={m} />)}
+          {quizMelds.map((m, i) => <MeldGroup key={i} meld={m} theme={th} />)}
         </div>
       </div>
 
@@ -2346,19 +2536,19 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16, justifyContent: "center" }}>
         {quizYakuList.map(y => {
           const selected = quizSelected.includes(y.name);
-          let chipBg = selected ? "rgba(232,167,53,0.25)" : "rgba(255,255,255,0.06)";
-          let chipBorder = selected ? "1px solid #e8a735" : "1px solid rgba(255,255,255,0.1)";
-          let chipColor = selected ? "#e8a735" : "#a0b090";
+          let chipBg = selected ? _a(th.accent, 0.25) : th.chipBg;
+          let chipBorder = selected ? `1px solid ${th.accent}` : `1px solid ${th.chipBorder}`;
+          let chipColor = selected ? th.accent : th.chipText;
 
           if (quizResult) {
             const isCorrect = quizResult.correctNames.includes(y.name);
             const wasSelected = quizSelected.includes(y.name);
             if (isCorrect && wasSelected) {
-              chipBg = "rgba(80,200,120,0.2)"; chipBorder = "1px solid #50c878"; chipColor = "#50c878";
+              chipBg = _a(th.success, 0.2); chipBorder = `1px solid ${th.success}`; chipColor = th.success;
             } else if (isCorrect && !wasSelected) {
-              chipBg = "rgba(80,200,120,0.12)"; chipBorder = "1px dashed #50c878"; chipColor = "#50c878";
+              chipBg = _a(th.success, 0.12); chipBorder = `1px dashed ${th.success}`; chipColor = th.success;
             } else if (!isCorrect && wasSelected) {
-              chipBg = "rgba(220,80,60,0.15)"; chipBorder = "1px solid #dc503c"; chipColor = "#dc503c";
+              chipBg = _a(th.error, 0.15); chipBorder = `1px solid ${th.error}`; chipColor = th.error;
             }
           }
 
@@ -2366,11 +2556,11 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
             <button key={y.name} onClick={() => !quizResult && onToggleYaku(y.name)} style={{
               padding: "6px 14px", fontSize: 13, borderRadius: 20, cursor: quizResult ? "default" : "pointer",
               background: chipBg, border: chipBorder, color: chipColor,
-              fontWeight: selected ? 700 : 400, fontFamily: "'Noto Serif JP', serif",
+              fontWeight: selected ? 700 : 400, fontFamily: "var(--font-main)",
               transition: "all 0.15s", opacity: quizResult && !quizResult.correctNames.includes(y.name) && !selected ? 0.4 : 1,
             }}>
               {y.name}
-              <span style={{ fontSize: 10, marginLeft: 4, opacity: 0.7, fontFamily: "sans-serif" }}>
+              <span style={{ fontSize: 10, marginLeft: 4, opacity: 0.7, fontFamily: "var(--font-ui)" }}>
                 {y.han >= 13 ? "役満" : `${y.han}翻`}
               </span>
             </button>
@@ -2379,24 +2569,24 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
         {/* 役なしチップ（Lv.3以降のみ表示） */}
         {showNoYaku && (() => {
           const selected = quizSelected.includes("役なし");
-          let chipBg = selected ? "rgba(120,100,160,0.25)" : "rgba(255,255,255,0.06)";
-          let chipBorder = selected ? "1px solid #9080c0" : "1px solid rgba(255,255,255,0.1)";
-          let chipColor = selected ? "#b0a0e0" : "#8088a0";
+          let chipBg = selected ? _a(th.noYakuAccent, 0.25) : th.chipBg;
+          let chipBorder = selected ? `1px solid ${th.noYakuAccent}` : `1px solid ${th.chipBorder}`;
+          let chipColor = selected ? th.noYakuText : th.noYakuInactive;
           if (quizResult) {
             const isCorrect = quizResult.correctNames.includes("役なし");
             if (isCorrect && selected) {
-              chipBg = "rgba(80,200,120,0.2)"; chipBorder = "1px solid #50c878"; chipColor = "#50c878";
+              chipBg = _a(th.success, 0.2); chipBorder = `1px solid ${th.success}`; chipColor = th.success;
             } else if (isCorrect && !selected) {
-              chipBg = "rgba(80,200,120,0.12)"; chipBorder = "1px dashed #50c878"; chipColor = "#50c878";
+              chipBg = _a(th.success, 0.12); chipBorder = `1px dashed ${th.success}`; chipColor = th.success;
             } else if (!isCorrect && selected) {
-              chipBg = "rgba(220,80,60,0.15)"; chipBorder = "1px solid #dc503c"; chipColor = "#dc503c";
+              chipBg = _a(th.error, 0.15); chipBorder = `1px solid ${th.error}`; chipColor = th.error;
             }
           }
           return (
             <button onClick={() => !quizResult && onToggleYaku("役なし")} style={{
               padding: "6px 14px", fontSize: 13, borderRadius: 20, cursor: quizResult ? "default" : "pointer",
               background: chipBg, border: chipBorder, color: chipColor,
-              fontWeight: selected ? 700 : 400, fontFamily: "'Noto Serif JP', serif",
+              fontWeight: selected ? 700 : 400, fontFamily: "var(--font-main)",
               transition: "all 0.15s", opacity: quizResult && !quizResult.correctNames.includes("役なし") && !selected ? 0.4 : 1,
             }}>役なし</button>
           );
@@ -2408,18 +2598,18 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
         <div style={{ textAlign: "center" }}>
           <button onClick={onSubmit} disabled={quizSelected.length === 0} style={{
             padding: "8px 32px", fontSize: 14, borderRadius: 6, fontWeight: 700,
-            fontFamily: "'Noto Serif JP', serif", cursor: quizSelected.length === 0 ? "not-allowed" : "pointer",
-            border: "1px solid #e8a735",
-            background: quizSelected.length === 0 ? "rgba(0,0,0,0.2)" : "rgba(232,167,53,0.2)",
-            color: quizSelected.length === 0 ? "#5a6a4a" : "#e8a735", letterSpacing: 2,
+            fontFamily: "var(--font-main)", cursor: quizSelected.length === 0 ? "not-allowed" : "pointer",
+            border: `1px solid ${th.accent}`,
+            background: quizSelected.length === 0 ? th.panelBgLight : _a(th.accent, 0.2),
+            color: quizSelected.length === 0 ? th.textFaint : th.accent, letterSpacing: 2,
           }}>回答する</button>
         </div>
       ) : (
         <div>
           <div style={{
             fontSize: 18, fontWeight: 700, marginBottom: 8, textAlign: "center",
-            color: quizResult.isCorrect ? "#50c878" : "#dc503c",
-            fontFamily: "'Noto Serif JP', serif",
+            color: quizResult.isCorrect ? th.success : th.error,
+            fontFamily: "var(--font-main)",
           }}>
             {quizResult.isCorrect ? "正解！" : "不正解…"}
           </div>
@@ -2431,19 +2621,19 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
                 return (
                   <div key="役なし" style={{
                     padding: "8px 10px", marginBottom: 6, borderRadius: 6,
-                    background: "rgba(80,200,120,0.08)", border: "1px solid rgba(80,200,120,0.2)",
+                    background: _a(th.success, 0.08), border: `1px solid ${_a(th.success, 0.2)}`,
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "#50c878",
-                        fontFamily: "'Noto Serif JP', serif" }}>役なし</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: th.success,
+                        fontFamily: "var(--font-main)" }}>役なし</span>
                       {quizResult.missed.includes("役なし") && (
-                        <span style={{ fontSize: 10, color: "#dc503c", fontFamily: "sans-serif",
-                          padding: "1px 6px", borderRadius: 3, background: "rgba(220,80,60,0.15)" }}>
+                        <span style={{ fontSize: 10, color: th.error, fontFamily: "var(--font-ui)",
+                          padding: "1px 6px", borderRadius: 3, background: _a(th.error, 0.15) }}>
                           選び漏れ
                         </span>
                       )}
                     </div>
-                    <span style={{ fontSize: 11, color: "#8a9a7a", fontFamily: "sans-serif" }}>
+                    <span style={{ fontSize: 11, color: th.textSecondary, fontFamily: "var(--font-ui)" }}>
                       この手牌には成立する役がありません
                     </span>
                   </div>
@@ -2456,32 +2646,32 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
               return (
                 <div key={yakuName} style={{
                   padding: "8px 10px", marginBottom: 6, borderRadius: 6,
-                  background: "rgba(80,200,120,0.08)", border: "1px solid rgba(80,200,120,0.2)",
+                  background: _a(th.success, 0.08), border: `1px solid ${_a(th.success, 0.2)}`,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "#50c878",
-                      fontFamily: "'Noto Serif JP', serif" }}>{yakuName}</span>
-                    <span style={{ fontSize: 10, color: "#8a9a7a", fontFamily: "sans-serif" }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: th.success,
+                      fontFamily: "var(--font-main)" }}>{yakuName}</span>
+                    <span style={{ fontSize: 10, color: th.textSecondary, fontFamily: "var(--font-ui)" }}>
                       {yakuDef ? (yakuDef.han >= 13 ? "役満"
                         : quizMelds.length > 0 && yakuDef.openHan
                           ? `${yakuDef.openHan}翻`
                           : `${yakuDef.han}翻`) : ""}
                     </span>
                     {quizMelds.length > 0 && yakuDef?.openHan && (
-                      <span style={{ fontSize: 10, color: "#e8a735", fontFamily: "sans-serif",
-                        padding: "1px 6px", borderRadius: 3, background: "rgba(232,167,53,0.15)" }}>
+                      <span style={{ fontSize: 10, color: th.accent, fontFamily: "var(--font-ui)",
+                        padding: "1px 6px", borderRadius: 3, background: _a(th.accent, 0.15) }}>
                         食い下がり（門前{yakuDef.han}翻→{yakuDef.openHan}翻）
                       </span>
                     )}
                     {quizResult.missed.includes(yakuName) && (
-                      <span style={{ fontSize: 10, color: "#dc503c", fontFamily: "sans-serif",
-                        padding: "1px 6px", borderRadius: 3, background: "rgba(220,80,60,0.15)" }}>
+                      <span style={{ fontSize: 10, color: th.error, fontFamily: "var(--font-ui)",
+                        padding: "1px 6px", borderRadius: 3, background: _a(th.error, 0.15) }}>
                         選び漏れ
                       </span>
                     )}
                   </div>
                   {yakuDef?.explain && (
-                    <div style={{ fontSize: 11, color: "#8a9a7a", fontFamily: "sans-serif", marginBottom: 4 }}>
+                    <div style={{ fontSize: 11, color: th.textSecondary, fontFamily: "var(--font-ui)", marginBottom: 4 }}>
                       {yakuDef.explain}
                     </div>
                   )}
@@ -2489,22 +2679,22 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
                     <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                       {breakdown.groups.map((g, gi) => (
                         <div key={gi} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontSize: 10, color: "#7a9a6a", fontFamily: "sans-serif",
+                          <span style={{ fontSize: 10, color: th.textInfo, fontFamily: "var(--font-ui)",
                             minWidth: 72, flexShrink: 0 }}>{g.label}</span>
                           <div style={{ display: "flex", gap: 2 }}>
-                            {g.tiles.map((t, ti) => <MiniTile key={ti} suit={t.suit} num={t.num} />)}
+                            {g.tiles.map((t, ti) => <MiniTile key={ti} suit={t.suit} num={t.num} theme={th} />)}
                           </div>
                         </div>
                       ))}
                       {breakdown.note && (
-                        <div style={{ fontSize: 10, color: "#b0a060", fontFamily: "sans-serif", marginTop: 2 }}>
+                        <div style={{ fontSize: 10, color: th.textNote, fontFamily: "var(--font-ui)", marginTop: 2 }}>
                           {breakdown.note}
                         </div>
                       )}
                     </div>
                   ) : !isAllTiles && (
                     <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                      {keyTiles.map((t, i) => <MiniTile key={i} suit={t.suit} num={t.num} />)}
+                      {keyTiles.map((t, i) => <MiniTile key={i} suit={t.suit} num={t.num} theme={th} />)}
                     </div>
                   )}
                 </div>
@@ -2519,15 +2709,15 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
                 return (
                   <div key={yakuName} style={{
                     padding: "8px 10px", marginBottom: 4, borderRadius: 6,
-                    background: "rgba(220,80,60,0.08)", border: "1px solid rgba(220,80,60,0.15)",
+                    background: _a(th.error, 0.08), border: `1px solid ${_a(th.error, 0.15)}`,
                   }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#dc503c",
-                      fontFamily: "'Noto Serif JP', serif" }}>{yakuName}</span>
-                    <span style={{ fontSize: 10, color: "#9a7a7a", fontFamily: "sans-serif", marginLeft: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: th.error,
+                      fontFamily: "var(--font-main)" }}>{yakuName}</span>
+                    <span style={{ fontSize: 10, color: th.textWrongDetail, fontFamily: "var(--font-ui)", marginLeft: 6 }}>
                       {yakuDef ? (yakuDef.han >= 13 ? "役満" : `${yakuDef.han}翻`) : ""}
                     </span>
                     {yakuDef?.explain && (
-                      <div style={{ fontSize: 11, color: "#9a7a7a", fontFamily: "sans-serif", marginTop: 3 }}>
+                      <div style={{ fontSize: 11, color: th.textWrongDetail, fontFamily: "var(--font-ui)", marginTop: 3 }}>
                         {yakuDef.explain}
                       </div>
                     )}
@@ -2536,15 +2726,15 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
               })}
             </div>
           )}
-          <div style={{ fontSize: 12, color: "#8a9a7a", marginBottom: 12, fontFamily: "sans-serif", textAlign: "center" }}>
+          <div style={{ fontSize: 12, color: th.textSecondary, marginBottom: 12, fontFamily: "var(--font-ui)", textAlign: "center" }}>
             スコア: {quizScore.correct} / {quizScore.total}
           </div>
           <div style={{ textAlign: "center" }}>
             <button onClick={onNext} style={{
               padding: "8px 28px", fontSize: 14, borderRadius: 6, fontWeight: 700,
-              fontFamily: "'Noto Serif JP', serif", cursor: "pointer",
-              border: "1px solid #e8a735", background: "rgba(232,167,53,0.2)",
-              color: "#e8a735", letterSpacing: 2,
+              fontFamily: "var(--font-main)", cursor: "pointer",
+              border: `1px solid ${th.accent}`, background: _a(th.accent, 0.2),
+              color: th.accent, letterSpacing: 2,
             }}>次の問題</button>
           </div>
         </div>
@@ -2553,7 +2743,7 @@ function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYa
   );
 }
 
-function YakuRow({ name, reading, han, explain, result, diff, maxDist, expanded, onToggle, isTarget, onTarget, isHandComplete }) {
+function YakuRow({ name, reading, han, explain, result, diff, maxDist, expanded, onToggle, isTarget, onTarget, isHandComplete, theme: th }) {
   const pct = maxDist > 0 ? Math.max(0, 1 - result.distance / maxDist) : 1;
   const hanLabel = han >= 13 ? "役満" : `${han}翻`;
   const distLabel = result.distance === 0
@@ -2565,20 +2755,20 @@ function YakuRow({ name, reading, han, explain, result, diff, maxDist, expanded,
   const isGone = diff === "gone";
   const changed = isCloser || isFarther || isNew || isGone;
 
-  let rowBg = "rgba(255,255,255,0.03)", leftBorder = "3px solid transparent";
-  if (isTarget) { rowBg = "rgba(240,200,80,0.15)"; leftBorder = "3px solid #f0c850"; }
+  let rowBg = th.rowBg, leftBorder = "3px solid transparent";
+  if (isTarget) { rowBg = _a(th.accentLight, 0.15); leftBorder = `3px solid ${th.targetBorder}`; }
   const isComplete = result.distance === 0 && isHandComplete;
   const isConditionMet = result.distance === 0 && !isHandComplete;
-  if (isComplete && !isFarther && !isGone) { rowBg = "rgba(232,167,53,0.2)"; leftBorder = "3px solid #e8a735"; }
-  if (isConditionMet && !isFarther && !isGone) { rowBg = "rgba(200,180,100,0.1)"; leftBorder = "3px solid #a0906a"; }
-  if (isCloser || isNew) { rowBg = "rgba(80,200,120,0.12)"; leftBorder = "3px solid #50c878"; }
-  if (isFarther || isGone) { rowBg = "rgba(220,80,60,0.1)"; leftBorder = "3px solid #dc503c"; }
+  if (isComplete && !isFarther && !isGone) { rowBg = _a(th.accent, 0.2); leftBorder = `3px solid ${th.accent}`; }
+  if (isConditionMet && !isFarther && !isGone) { rowBg = _a(th.conditionBorder, 0.15); leftBorder = `3px solid ${th.conditionBorder}`; }
+  if (isCloser || isNew) { rowBg = _a(th.success, 0.12); leftBorder = `3px solid ${th.success}`; }
+  if (isFarther || isGone) { rowBg = _a(th.error, 0.1); leftBorder = `3px solid ${th.error}`; }
 
-  let barColor = "linear-gradient(90deg, #4a7a5a, #6aaa7a)";
-  if (isComplete && !isFarther && !isGone) barColor = "linear-gradient(90deg, #e8a735, #f0c050)";
-  if (isConditionMet && !isFarther && !isGone) barColor = "linear-gradient(90deg, #a0906a, #c0b080)";
-  if (isCloser) barColor = "linear-gradient(90deg, #3a9a5a, #50c878)";
-  if (isFarther) barColor = "linear-gradient(90deg, #b04030, #dc503c)";
+  let barColor = th.barDefault;
+  if (isComplete && !isFarther && !isGone) barColor = th.barComplete;
+  if (isConditionMet && !isFarther && !isGone) barColor = th.barCondition;
+  if (isCloser) barColor = th.barCloser;
+  if (isFarther) barColor = th.barFarther;
 
   return (
     <div style={{
@@ -2590,32 +2780,32 @@ function YakuRow({ name, reading, han, explain, result, diff, maxDist, expanded,
         cursor: "pointer", userSelect: "none",
       }}>
         <div style={{ minWidth: 44, textAlign: "center" }}>
-          <span style={{ fontSize: 10, color: han >= 13 ? "#e8a735" : "#8a9a7a",
-            fontFamily: "sans-serif", fontWeight: 600 }}>{hanLabel}</span>
+          <span style={{ fontSize: 10, color: han >= 13 ? th.accent : th.textSecondary,
+            fontFamily: "var(--font-ui)", fontWeight: 600 }}>{hanLabel}</span>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
             <span style={{ fontSize: 15, fontWeight: 700,
-              color: isComplete ? "#e8a735" : isConditionMet ? "#b0a070" : "#e0d8c4",
-              fontFamily: "'Noto Serif JP', serif" }}>{name}</span>
-            <span style={{ fontSize: 11, color: "#8a9a7a", fontFamily: "sans-serif" }}>{reading}</span>
-            <span style={{ fontSize: 9, color: "#5a6a4a", fontFamily: "sans-serif",
+              color: isComplete ? th.accent : isConditionMet ? th.conditionText : th.textPrimary,
+              fontFamily: "var(--font-main)" }}>{name}</span>
+            <span style={{ fontSize: 11, color: th.textSecondary, fontFamily: "var(--font-ui)" }}>{reading}</span>
+            <span style={{ fontSize: 9, color: th.textFaint, fontFamily: "var(--font-ui)",
               marginLeft: "auto", flexShrink: 0, transition: "transform 0.2s",
               transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
             }}>▼</span>
           </div>
-          <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, marginTop: 4, overflow: "hidden" }}>
+          <div style={{ height: 4, background: th.barBg, borderRadius: 2, marginTop: 4, overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${pct * 100}%`, background: barColor,
               borderRadius: 2, transition: "width 0.4s ease" }} />
           </div>
-          <div style={{ fontSize: 10, color: "#7a8a6a", marginTop: 2, fontFamily: "sans-serif" }}>{result.desc}</div>
+          <div style={{ fontSize: 10, color: th.textInfo, marginTop: 2, fontFamily: "var(--font-ui)" }}>{result.desc}</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", minWidth: 80 }}>
           <span style={{ fontSize: 13, fontWeight: 700,
-            color: isComplete ? "#e8a735" : isConditionMet ? "#b0a070" : "#a0b090", fontFamily: "sans-serif" }}>{distLabel}</span>
+            color: isComplete ? th.accent : isConditionMet ? th.conditionText : th.chipText, fontFamily: "var(--font-ui)" }}>{distLabel}</span>
           {changed && (
-            <span style={{ fontSize: 11, fontWeight: 700, marginTop: 2, fontFamily: "sans-serif",
-              color: (isCloser || isNew) ? "#50c878" : "#dc503c",
+            <span style={{ fontSize: 11, fontWeight: 700, marginTop: 2, fontFamily: "var(--font-ui)",
+              color: (isCloser || isNew) ? th.success : th.error,
               display: "flex", alignItems: "center", gap: 2, whiteSpace: "nowrap" }}>
               {isCloser && <>▲ {Math.abs(diff)}近づく</>}
               {isFarther && <>▼ {Math.abs(diff)}遠ざかる</>}
@@ -2628,25 +2818,25 @@ function YakuRow({ name, reading, han, explain, result, diff, maxDist, expanded,
       {expanded && (
         <div style={{
           padding: "6px 10px 10px 54px",
-          fontSize: 11, lineHeight: 1.6, color: "#b0a880",
-          fontFamily: "sans-serif",
-          borderTop: "1px solid rgba(255,255,255,0.05)",
-          background: "rgba(0,0,0,0.08)",
+          fontSize: 11, lineHeight: 1.6, color: th.textScore,
+          fontFamily: "var(--font-ui)",
+          borderTop: `1px solid ${th.rowDivider}`,
+          background: th.panelBgFaint,
         }}>
           {explain && <div style={{ marginBottom: 6 }}>{explain}</div>}
 
           {result.obstacles && result.obstacles.length > 0 && (
-            <HintSection label="切りたい牌" color="#dc503c">
+            <HintSection label="切りたい牌" color={th.error}>
               {result.obstacles.map((t, i) => (
-                <MiniTile key={`o${i}`} suit={t.suit} num={t.num} />
+                <MiniTile key={`o${i}`} suit={t.suit} num={t.num} theme={th} />
               ))}
             </HintSection>
           )}
 
           {result.wanted && result.wanted.length > 0 && (
-            <HintSection label="欲しい牌" color="#50c878">
+            <HintSection label="欲しい牌" color={th.success}>
               {result.wanted.map((w, i) => (
-                <MiniTile key={`w${i}`} suit={w.suit} num={w.num} />
+                <MiniTile key={`w${i}`} suit={w.suit} num={w.num} theme={th} />
               ))}
             </HintSection>
           )}
@@ -2654,10 +2844,10 @@ function YakuRow({ name, reading, han, explain, result, diff, maxDist, expanded,
           <div style={{ marginTop: 8 }}>
             <button onClick={(e) => { e.stopPropagation(); onTarget(); }} style={{
               padding: "4px 12px", fontSize: 11, borderRadius: 4, fontWeight: 600,
-              fontFamily: "sans-serif", cursor: "pointer", transition: "all 0.15s",
-              border: isTarget ? "1px solid #f0c850" : "1px solid #5a6a4a",
-              background: isTarget ? "rgba(240,200,80,0.2)" : "rgba(0,0,0,0.2)",
-              color: isTarget ? "#f0c850" : "#8a9a7a",
+              fontFamily: "var(--font-ui)", cursor: "pointer", transition: "all 0.15s",
+              border: isTarget ? `1px solid ${th.targetBorder}` : `1px solid ${th.textFaint}`,
+              background: isTarget ? _a(th.accentLight, 0.2) : th.panelBgLight,
+              color: isTarget ? th.targetBorder : th.textSecondary,
             }}>{isTarget ? "解除" : "この役を狙う"}</button>
           </div>
         </div>
@@ -2666,13 +2856,13 @@ function YakuRow({ name, reading, han, explain, result, diff, maxDist, expanded,
   );
 }
 
-function MeldActionBtn({ label, active, color, onClick }) {
+function MeldActionBtn({ label, active, color, onClick, theme: th }) {
   return (
     <button onClick={onClick} style={{
       padding: "6px 16px", fontSize: 13, borderRadius: 5, fontWeight: 600,
-      fontFamily: "sans-serif", cursor: "pointer", transition: "all 0.15s",
+      fontFamily: "var(--font-ui)", cursor: "pointer", transition: "all 0.15s",
       border: `1px solid ${color}`,
-      background: active ? `${color}30` : "rgba(0,0,0,0.2)",
+      background: active ? `${color}30` : th.panelBgLight,
       color: active ? color : `${color}99`,
       boxShadow: active ? `0 0 10px ${color}40` : "none",
       transform: active ? "scale(1.05)" : "none",
@@ -2697,6 +2887,16 @@ export default function MahjongYakuTrainer() {
   const [meldPreview, setMeldPreview] = useState(null);
   const [expandedYaku, setExpandedYaku] = useState(null);
   const [targetYaku, setTargetYaku] = useState(null);
+
+  // ─── Theme State ───
+  const [themeKey, setThemeKey] = useState(() => {
+    try { return localStorage.getItem('mahjong-theme') || 'dark'; } catch { return 'dark'; }
+  });
+  const theme = useMemo(() => THEMES[themeKey] || THEMES.dark, [themeKey]);
+  const groupStyles = useMemo(() => getGroupStyles(theme), [theme]);
+  useEffect(() => {
+    try { localStorage.setItem('mahjong-theme', themeKey); } catch {}
+  }, [themeKey]);
 
   // ─── Quiz Mode State ───
   const [mode, setMode] = useState("quiz"); // "trainer" | "quiz"
@@ -3061,46 +3261,60 @@ export default function MahjongYakuTrainer() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(160deg, #0f2a1a 0%, #1a3a2a 40%, #162e20 100%)",
-      color: "#e0d8c4",
-      fontFamily: "'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif",
+      background: theme.pageBg,
+      color: theme.textPrimary,
+      fontFamily: theme.fontMain,
+      "--font-main": theme.fontMain,
+      "--font-ui": theme.fontUI,
       padding: "16px", boxSizing: "border-box",
     }}>
-      <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Zen+Maru+Gothic:wght@400;700&family=M+PLUS+1+Code:wght@400;700&display=swap" rel="stylesheet" />
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
         marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
         <div>
           <h1 style={{ fontSize: 22, margin: 0, fontWeight: 700,
-            background: "linear-gradient(135deg, #e8a735, #f0d080)",
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: 2,
+            backgroundImage: theme.titleGradient,
+            backgroundClip: "text", WebkitBackgroundClip: "text",
+            color: "transparent", WebkitTextFillColor: "transparent", letterSpacing: 2,
           }}>麻雀役道場</h1>
-          <p style={{ fontSize: 11, color: "#6a7a5a", margin: "2px 0 0", fontFamily: "sans-serif" }}>
+          <p style={{ fontSize: 11, color: theme.textMuted, margin: "2px 0 0", fontFamily: "var(--font-ui)" }}>
             {mode === "trainer" ? "手牌から狙える役を見極めよう"
               : quizType === "tenpai" ? "待ち牌を見極めよう"
               : "成立している役を当てよう"}</p>
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          {/* Theme toggle */}
+          <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", border: `1px solid ${theme.toggleBorder}` }}>
+            {Object.entries(THEMES).map(([key, t]) => (
+              <button key={key} onClick={() => setThemeKey(key)} style={{
+                padding: "4px 10px", fontSize: 11, border: "none",
+                background: themeKey === key ? _a(theme.accent, 0.2) : theme.panelBgLight,
+                color: themeKey === key ? theme.accent : theme.textInfo, cursor: "pointer", fontFamily: "var(--font-ui)",
+                fontWeight: themeKey === key ? 700 : 400,
+              }}>{t.name}</button>
+            ))}
+          </div>
           {/* Mode toggle */}
-          <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", border: "1px solid #3a5a40" }}>
+          <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", border: `1px solid ${theme.toggleBorder}` }}>
             {[{ key: "trainer", label: "道場" }, { key: "quiz", label: "クイズ" }].map(m => (
               <button key={m.key} onClick={() => switchMode(m.key)} style={{
                 padding: "4px 10px", fontSize: 11, border: "none",
-                background: mode === m.key ? "rgba(232,167,53,0.2)" : "rgba(0,0,0,0.2)",
-                color: mode === m.key ? "#e8a735" : "#7a9a6a", cursor: "pointer", fontFamily: "sans-serif",
+                background: mode === m.key ? _a(theme.accent, 0.2) : theme.panelBgLight,
+                color: mode === m.key ? theme.accent : theme.textInfo, cursor: "pointer", fontFamily: "var(--font-ui)",
                 fontWeight: mode === m.key ? 700 : 400,
               }}>{m.label}</button>
             ))}
           </div>
           {/* Quiz type sub-toggle */}
           {mode === "quiz" && (
-            <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", border: "1px solid #3a5a40" }}>
+            <div style={{ display: "flex", borderRadius: 4, overflow: "hidden", border: `1px solid ${theme.toggleBorder}` }}>
               {[{ key: "yaku", label: "役" }, { key: "tenpai", label: "聴牌" }].map(qt => (
                 <button key={qt.key} onClick={() => switchQuizType(qt.key)} style={{
                   padding: "4px 10px", fontSize: 11, border: "none",
-                  background: quizType === qt.key ? "rgba(160,112,208,0.2)" : "rgba(0,0,0,0.2)",
-                  color: quizType === qt.key ? "#b0a0e0" : "#7a9a6a", cursor: "pointer", fontFamily: "sans-serif",
+                  background: quizType === qt.key ? _a(theme.quizTypeAccent, 0.2) : theme.panelBgLight,
+                  color: quizType === qt.key ? theme.quizTypeText : theme.textInfo, cursor: "pointer", fontFamily: "var(--font-ui)",
                   fontWeight: quizType === qt.key ? 700 : 400,
                 }}>{qt.label}</button>
               ))}
@@ -3134,22 +3348,22 @@ export default function MahjongYakuTrainer() {
               }
             }} style={{
               padding: "4px 10px", fontSize: 11, borderRadius: 4,
-              border: i === level ? "1px solid #e8a735" : "1px solid #3a5a40",
-              background: i === level ? "rgba(232,167,53,0.15)" : "rgba(0,0,0,0.2)",
-              color: i === level ? "#e8a735" : "#7a9a6a", cursor: "pointer", fontFamily: "sans-serif",
+              border: i === level ? `1px solid ${theme.accent}` : `1px solid ${theme.toggleBorder}`,
+              background: i === level ? _a(theme.accent, 0.15) : theme.panelBgLight,
+              color: i === level ? theme.accent : theme.textInfo, cursor: "pointer", fontFamily: "var(--font-ui)",
             }}>{lv.name}</button>
           ))}
           <button onClick={mode === "trainer" ? dealHand : (quizType === "tenpai" ? startTenpaiQuiz : startQuiz)} style={{
             padding: "6px 14px", fontSize: 12, borderRadius: 4,
-            border: "1px solid #e8a735", background: "rgba(232,167,53,0.15)",
-            color: "#e8a735", cursor: "pointer", fontWeight: 600, fontFamily: "sans-serif",
+            border: `1px solid ${theme.accent}`, background: _a(theme.accent, 0.15),
+            color: theme.accent, cursor: "pointer", fontWeight: 600, fontFamily: "var(--font-ui)",
           }}>{mode === "trainer" ? "配牌" : "出題"}</button>
         </div>
       </div>
 
       {/* Info bar */}
       <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 12,
-        color: "#8a9a7a", fontFamily: "sans-serif", flexWrap: "wrap" }}>
+        color: theme.textSecondary, fontFamily: "var(--font-ui)", flexWrap: "wrap" }}>
         <span>場風: {HONOR_NAMES[roundWind]}</span>
         <span>自風: {HONOR_NAMES[seatWind]}</span>
         {mode === "trainer" && <>
@@ -3176,6 +3390,7 @@ export default function MahjongYakuTrainer() {
           quizScore={quizScore}
           ctx={ctx}
           maxHan={currentLevel.maxHan}
+          theme={theme}
         />
       )}
       {mode === "quiz" && quizHand.length > 0 && quizType === "tenpai" && tenpaiTargetYaku && (
@@ -3189,6 +3404,7 @@ export default function MahjongYakuTrainer() {
           onNext={nextQuiz}
           quizScore={quizScore}
           acceptTiles={tenpaiAcceptTiles}
+          theme={theme}
         />
       )}
 
@@ -3197,15 +3413,15 @@ export default function MahjongYakuTrainer() {
       {/* Melds (committed + preview) */}
       {(melds.length > 0 || meldPreviewData?.meld) && (
         <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
-          {melds.map((m, i) => <MeldGroup key={i} meld={m} />)}
-          {meldPreviewData?.meld && <MeldGroup meld={meldPreviewData.meld} preview />}
+          {melds.map((m, i) => <MeldGroup key={i} meld={m} theme={theme} />)}
+          {meldPreviewData?.meld && <MeldGroup meld={meldPreviewData.meld} preview theme={theme} />}
         </div>
       )}
 
       {/* Hand */}
       <div style={{
-        background: "rgba(0,0,0,0.25)", borderRadius: 10, padding: "14px 12px", marginBottom: 12,
-        border: isPreviewing ? "1px solid rgba(240,192,80,0.3)" : "1px solid transparent",
+        background: theme.panelBg, borderRadius: 10, padding: "14px 12px", marginBottom: 12,
+        border: isPreviewing ? `1px solid ${theme.previewBorder}` : "1px solid transparent",
         transition: "border-color 0.3s",
       }}>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "flex-end", justifyContent: "center" }}>
@@ -3213,6 +3429,7 @@ export default function MahjongYakuTrainer() {
             <Tile key={t.id} tile={t}
               selected={selectedTileId === t.id}
               onClick={phase === "discard" ? () => handleTileClick(t.id) : undefined}
+              theme={theme}
             />
           ))}
           {drawnTile && (
@@ -3221,6 +3438,7 @@ export default function MahjongYakuTrainer() {
               <Tile tile={drawnTile} drawn
                 selected={selectedTileId === drawnTile.id}
                 onClick={phase === "discard" ? () => handleTileClick(drawnTile.id) : undefined}
+                theme={theme}
               />
             </>
           )}
@@ -3233,15 +3451,15 @@ export default function MahjongYakuTrainer() {
           {phase === "draw" && (
             <button onClick={drawTile} style={{
               padding: "8px 24px", fontSize: 14, borderRadius: 6,
-              border: "none", background: "linear-gradient(135deg, #2a6a3a, #3a8a4a)",
-              color: "#e0f0d0", cursor: "pointer", fontWeight: 700,
-              fontFamily: "'Noto Serif JP', serif", letterSpacing: 2,
+              border: "none", background: theme.btnTsumoBg,
+              color: theme.btnTsumoColor, cursor: "pointer", fontWeight: 700,
+              fontFamily: "var(--font-main)", letterSpacing: 2,
               boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
             }}>ツモ</button>
           )}
 
           {phase === "discard" && selectedTileId === null && (
-            <p style={{ fontSize: 12, color: "#c8a64c", margin: 0, fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: 12, color: theme.textAccent, margin: 0, fontFamily: "var(--font-ui)" }}>
               牌をタップで選択 → 役への影響を確認</p>
           )}
 
@@ -3249,20 +3467,20 @@ export default function MahjongYakuTrainer() {
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6,
                 padding: "4px 10px", borderRadius: 6,
-                background: "rgba(232,167,53,0.1)", border: "1px solid rgba(232,167,53,0.3)" }}>
-                {selectedTileObj && <Tile tile={selectedTileObj} small />}
-                <span style={{ fontSize: 12, color: "#c8a64c", fontFamily: "sans-serif" }}>を切ると…</span>
+                background: _a(theme.accent, 0.1), border: `1px solid ${_a(theme.accent, 0.3)}` }}>
+                {selectedTileObj && <Tile tile={selectedTileObj} small theme={theme} />}
+                <span style={{ fontSize: 12, color: theme.textAccent, fontFamily: "var(--font-ui)" }}>を切ると…</span>
               </div>
-              <DiffBadge summary={diffSummary} />
+              <DiffBadge summary={diffSummary} theme={theme} />
               <button onClick={() => confirmDiscard(selectedTileId)} style={{
                 padding: "6px 18px", fontSize: 13, borderRadius: 5,
-                border: "1px solid #e8a735", background: "rgba(232,167,53,0.2)",
-                color: "#e8a735", cursor: "pointer", fontWeight: 700, fontFamily: "sans-serif",
+                border: `1px solid ${theme.accent}`, background: _a(theme.accent, 0.2),
+                color: theme.accent, cursor: "pointer", fontWeight: 700, fontFamily: "var(--font-ui)",
               }}>打牌</button>
               <button onClick={() => setSelectedTileId(null)} style={{
                 padding: "6px 14px", fontSize: 12, borderRadius: 5,
-                border: "1px solid #5a7a5a", background: "rgba(0,0,0,0.2)",
-                color: "#8a9a7a", cursor: "pointer", fontFamily: "sans-serif",
+                border: `1px solid ${theme.toggleBorder}`, background: theme.panelBgLight,
+                color: theme.textSecondary, cursor: "pointer", fontFamily: "var(--font-ui)",
               }}>戻す</button>
             </div>
           )}
@@ -3271,68 +3489,68 @@ export default function MahjongYakuTrainer() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center", width: "100%" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 12, color: "#8a9a7a", fontFamily: "sans-serif" }}>他家の捨て牌:</span>
-                  {opponentTile && <Tile tile={opponentTile} small />}
+                  <span style={{ fontSize: 12, color: theme.textSecondary, fontFamily: "var(--font-ui)" }}>他家の捨て牌:</span>
+                  {opponentTile && <Tile tile={opponentTile} small theme={theme} />}
                 </div>
                 {canPon && (
-                  <MeldActionBtn label="ポン" active={meldPreview === "pon"} color="#e87040"
+                  <MeldActionBtn label="ポン" active={meldPreview === "pon"} color="#e87040" theme={theme}
                     onClick={() => meldPreview === "pon" ? confirmMeld() : setMeldPreview("pon")} />
                 )}
                 {canChi && (
-                  <MeldActionBtn label="チー" active={meldPreview === "chi"} color="#4090e0"
+                  <MeldActionBtn label="チー" active={meldPreview === "chi"} color="#4090e0" theme={theme}
                     onClick={() => meldPreview === "chi" ? confirmMeld() : setMeldPreview("chi")} />
                 )}
-                <MeldActionBtn label="スルー" active={meldPreview === "skip"} color="#7a9a7a"
+                <MeldActionBtn label="スルー" active={meldPreview === "skip"} color="#7a9a7a" theme={theme}
                   onClick={() => meldPreview === "skip" ? confirmMeld() : setMeldPreview("skip")} />
               </div>
               {meldPreview && (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "center",
                   padding: "6px 12px", borderRadius: 6,
-                  background: "rgba(232,167,53,0.08)", border: "1px solid rgba(232,167,53,0.2)" }}>
-                  <span style={{ fontSize: 12, color: "#c8a64c", fontFamily: "sans-serif" }}>
+                  background: _a(theme.accent, 0.08), border: `1px solid ${_a(theme.accent, 0.2)}` }}>
+                  <span style={{ fontSize: 12, color: theme.textAccent, fontFamily: "var(--font-ui)" }}>
                     {meldPreview === "pon" && "ポンすると…"}
                     {meldPreview === "chi" && "チーすると…"}
                     {meldPreview === "skip" && "スルーすると…"}
                   </span>
-                  <DiffBadge summary={diffSummary} />
+                  <DiffBadge summary={diffSummary} theme={theme} />
                   <button onClick={confirmMeld} style={{
                     padding: "5px 16px", fontSize: 12, borderRadius: 5,
-                    border: "1px solid #e8a735", background: "rgba(232,167,53,0.2)",
-                    color: "#e8a735", cursor: "pointer", fontWeight: 700, fontFamily: "sans-serif",
+                    border: `1px solid ${theme.accent}`, background: _a(theme.accent, 0.2),
+                    color: theme.accent, cursor: "pointer", fontWeight: 700, fontFamily: "var(--font-ui)",
                   }}>確定</button>
                   <button onClick={() => setMeldPreview(null)} style={{
                     padding: "5px 12px", fontSize: 11, borderRadius: 5,
-                    border: "1px solid #5a7a5a", background: "rgba(0,0,0,0.2)",
-                    color: "#8a9a7a", cursor: "pointer", fontFamily: "sans-serif",
+                    border: `1px solid ${theme.toggleBorder}`, background: theme.panelBgLight,
+                    color: theme.textSecondary, cursor: "pointer", fontFamily: "var(--font-ui)",
                   }}>比較</button>
                 </div>
               )}
               {!meldPreview && (
-                <p style={{ fontSize: 11, color: "#6a7a5a", margin: 0, fontFamily: "sans-serif" }}>
+                <p style={{ fontSize: 11, color: theme.textMuted, margin: 0, fontFamily: "var(--font-ui)" }}>
                   タップで役への影響をプレビュー → もう一度タップ or 確定で実行</p>
               )}
             </div>
           )}
 
           {phase === "ended" && (
-            <p style={{ fontSize: 14, color: "#c8a64c", fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: 14, color: theme.textAccent, fontFamily: "var(--font-ui)" }}>
               牌山がなくなりました（流局）</p>
           )}
         </div>
       </div>
 
       {/* Hand Decomposition */}
-      <HandDecomposition groups={handDecomposition} />
+      <HandDecomposition groups={handDecomposition} theme={theme} groupStyles={groupStyles} />
 
       {/* Shanten & Accept Tiles */}
-      <ShantenPanel shanten={shantenInfo.shanten} acceptTiles={shantenInfo.tiles} />
+      <ShantenPanel shanten={shantenInfo.shanten} acceptTiles={shantenInfo.tiles} theme={theme} />
 
       {/* Discard pool */}
       {discardPool.length > 0 && (
-        <div style={{ marginBottom: 12, padding: "8px 10px", background: "rgba(0,0,0,0.15)", borderRadius: 8 }}>
-          <div style={{ fontSize: 10, color: "#6a7a5a", marginBottom: 4, fontFamily: "sans-serif" }}>捨て牌</div>
+        <div style={{ marginBottom: 12, padding: "8px 10px", background: theme.panelBgLighter, borderRadius: 8 }}>
+          <div style={{ fontSize: 10, color: theme.textMuted, marginBottom: 4, fontFamily: "var(--font-ui)" }}>捨て牌</div>
           <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-            {discardPool.map((t, i) => <Tile key={i} tile={t} small dimmed />)}
+            {discardPool.map((t, i) => <Tile key={i} tile={t} small dimmed theme={theme} />)}
           </div>
         </div>
       )}
@@ -3344,29 +3562,30 @@ export default function MahjongYakuTrainer() {
           totalHan={agariResult.totalHan}
           fu={agariResult.fu}
           scoreInfo={agariResult.scoreInfo}
+          theme={theme}
         />
       )}
 
       {/* Yaku Analysis Panel */}
       <div style={{
-        background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: 12,
-        border: isPreviewing ? "1px solid rgba(232,167,53,0.35)" : "1px solid rgba(200,166,76,0.15)",
+        background: theme.panelBgLight, borderRadius: 10, padding: 12,
+        border: isPreviewing ? `1px solid ${_a(theme.accent, 0.35)}` : `1px solid ${theme.panelBorderLight}`,
         transition: "border-color 0.3s ease",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#c8a64c", letterSpacing: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: theme.textAccent, letterSpacing: 1 }}>
             {previewTitle}
           </div>
           {isPreviewing && (
-            <div style={{ display: "flex", gap: 12, fontSize: 10, fontFamily: "sans-serif" }}>
-              <span style={{ color: "#50c878" }}>▲ 近づく</span>
-              <span style={{ color: "#dc503c" }}>▼ 遠ざかる</span>
+            <div style={{ display: "flex", gap: 12, fontSize: 10, fontFamily: "var(--font-ui)" }}>
+              <span style={{ color: theme.success }}>▲ 近づく</span>
+              <span style={{ color: theme.error }}>▼ 遠ざかる</span>
             </div>
           )}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {displayList.length === 0 && (
-            <p style={{ fontSize: 12, color: "#5a6a4a", fontFamily: "sans-serif" }}>配牌してください</p>
+            <p style={{ fontSize: 12, color: theme.textFaint, fontFamily: "var(--font-ui)" }}>配牌してください</p>
           )}
           {displayList.map(item => (
             <YakuRow key={item.name} name={item.name} reading={item.reading} han={item.han}
@@ -3377,6 +3596,7 @@ export default function MahjongYakuTrainer() {
               isTarget={targetYaku === item.name}
               onTarget={() => setTargetYaku(targetYaku === item.name ? null : item.name)}
               isHandComplete={isHandComplete}
+              theme={theme}
             />
           ))}
         </div>
@@ -3384,20 +3604,20 @@ export default function MahjongYakuTrainer() {
 
       {/* Legend */}
       <div style={{
-        marginTop: 16, padding: "10px 12px", fontSize: 10, color: "#5a6a4a",
-        fontFamily: "sans-serif", background: "rgba(0,0,0,0.1)", borderRadius: 6, lineHeight: 1.8,
+        marginTop: 16, padding: "10px 12px", fontSize: 10, color: theme.textFaint,
+        fontFamily: "var(--font-ui)", background: theme.panelBgSubtle, borderRadius: 6, lineHeight: 1.8,
       }}>
-        <strong style={{ color: "#7a8a6a" }}>手牌構成:</strong>{" "}
-        <span style={{ color: GROUP_STYLES.shuntsu.color }}>順子</span>　
-        <span style={{ color: GROUP_STYLES.koutsu.color }}>刻子</span>　
-        <span style={{ color: GROUP_STYLES.toitsu.color }}>対子</span>　
-        <span style={{ color: GROUP_STYLES.kantsu.color }}>槓子</span>　
-        <span style={{ color: GROUP_STYLES.tatsu.color }}>搭子</span>　
-        <span style={{ color: GROUP_STYLES.isolated.color }}>孤立</span>　|　
-        <strong style={{ color: "#7a8a6a" }}>操作:</strong>{" "}
-        1タップ＝プレビュー → 2タップ/確定で実行　|　
-        <span style={{ color: "#50c878" }}>緑＝近づく</span>
-        <span style={{ color: "#dc503c" }}>赤＝遠ざかる</span>
+        <strong style={{ color: theme.textInfo }}>手牌構成:</strong>{" "}
+        <span style={{ color: groupStyles.shuntsu.color }}>順子</span>
+        <span style={{ color: groupStyles.koutsu.color }}>刻子</span>
+        <span style={{ color: groupStyles.toitsu.color }}>対子</span>
+        <span style={{ color: groupStyles.kantsu.color }}>槓子</span>
+        <span style={{ color: groupStyles.tatsu.color }}>搭子</span>
+        <span style={{ color: groupStyles.isolated.color }}>孤立</span>　|
+        <strong style={{ color: theme.textInfo }}>操作:</strong>{" "}
+        1タップ＝プレビュー → 2タップ/確定で実行　|
+        <span style={{ color: theme.success }}>緑＝近づく</span>
+        <span style={{ color: theme.error }}>赤＝遠ざかる</span>
       </div>
       </>)}
     </div>
