@@ -1729,6 +1729,162 @@ const LEVELS = [
   { name: "Lv.4 役満", maxHan: 99, label: "全役" },
 ];
 
+const DEFENSE_LEVELS = [
+  { name: "Lv.1 現物", key: "genbutsu", label: "現物" },
+  { name: "Lv.2 筋",   key: "suji",     label: "筋" },
+  { name: "Lv.3 壁",   key: "kabe",     label: "壁" },
+];
+
+// ─── Defense quiz logic ───
+
+function findGenbutsu(discards) {
+  const keys = new Set();
+  discards.forEach(t => keys.add(tileKey(t)));
+  return keys;
+}
+
+function findSuji(discards) {
+  const keys = new Set();
+  discards.forEach(t => {
+    if (t.suit === "z") return;
+    const n = t.num;
+    if (n - 3 >= 1) keys.add(`${t.suit}${n - 3}`);
+    if (n + 3 <= 9) keys.add(`${t.suit}${n + 3}`);
+  });
+  // Remove keys that overlap with genbutsu
+  const genKeys = findGenbutsu(discards);
+  genKeys.forEach(k => keys.delete(k));
+  return keys;
+}
+
+function findKabe(visibleTiles, genbutsuKeys, sujiKeys) {
+  const keys = new Set();
+  const counts = {};
+  visibleTiles.forEach(t => {
+    const k = tileKey(t);
+    counts[k] = (counts[k] || 0) + 1;
+  });
+  // 4枚見え: 隣接牌が壁
+  for (const [k, cnt] of Object.entries(counts)) {
+    const suit = k[0];
+    if (suit === "z") continue;
+    const num = parseInt(k.slice(1));
+    if (cnt >= 4) {
+      // ±1, ±2 を壁として追加
+      for (const d of [-2, -1, 1, 2]) {
+        const adj = num + d;
+        if (adj >= 1 && adj <= 9) keys.add(`${suit}${adj}`);
+      }
+    }
+    // 3枚見え（ワンチャンス）
+    if (cnt >= 3) {
+      for (const d of [-1, 1]) {
+        const adj = num + d;
+        if (adj >= 1 && adj <= 9) keys.add(`${suit}${adj}`);
+      }
+    }
+  }
+  // Remove keys that overlap with genbutsu or suji
+  genbutsuKeys.forEach(k => keys.delete(k));
+  sujiKeys.forEach(k => keys.delete(k));
+  return keys;
+}
+
+function computeSafeTiles(defenseLv, hand, reachiDiscards, allVisible) {
+  const genbutsuKeys = findGenbutsu(reachiDiscards);
+  const sujiKeys = findSuji(reachiDiscards);
+  const kabeKeys = findKabe(allVisible, genbutsuKeys, sujiKeys);
+
+  // Determine which categories are active based on level
+  let activeKeys = new Set(genbutsuKeys);
+  if (defenseLv >= 1) {
+    sujiKeys.forEach(k => activeKeys.add(k));
+  }
+  if (defenseLv >= 2) {
+    kabeKeys.forEach(k => activeKeys.add(k));
+  }
+
+  // Find safe tiles in hand
+  const handKeys = hand.map(t => tileKey(t));
+  const correctKeys = [...new Set(handKeys.filter(k => activeKeys.has(k)))];
+
+  const safeHandDetails = correctKeys.map(k => {
+    let category;
+    if (genbutsuKeys.has(k)) category = "genbutsu";
+    else if (sujiKeys.has(k)) category = "suji";
+    else category = "kabe";
+    return { key: k, category };
+  });
+
+  // Extra safe tiles (not in hand)
+  const handKeySet = new Set(handKeys);
+  const extraSafe = { genbutsu: [], suji: [], kabe: [] };
+  genbutsuKeys.forEach(k => { if (!handKeySet.has(k)) extraSafe.genbutsu.push(k); });
+  if (defenseLv >= 1) {
+    sujiKeys.forEach(k => { if (!handKeySet.has(k)) extraSafe.suji.push(k); });
+  }
+  if (defenseLv >= 2) {
+    kabeKeys.forEach(k => { if (!handKeySet.has(k)) extraSafe.kabe.push(k); });
+  }
+
+  return { correctKeys, safeHandDetails, extraSafe, genbutsuKeys, sujiKeys, kabeKeys };
+}
+
+function generateDefenseQuiz(defenseLv) {
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const wall = shuffle(buildWall());
+    let idx = 0;
+    const myHand = wall.slice(idx, idx + 13); idx += 13;
+    const opp1Hand = wall.slice(idx, idx + 13); idx += 13;
+    const opp2Hand = wall.slice(idx, idx + 13); idx += 13;
+    const opp3Hand = wall.slice(idx, idx + 13); idx += 13;
+    const doraTile = wall[idx]; idx += 1;
+
+    const opponents = [opp1Hand, opp2Hand, opp3Hand].map(h => {
+      const shuffled = shuffle([...h]);
+      const discardCount = 6 + Math.floor(Math.random() * 5); // 6-10
+      const discards = shuffled.slice(0, discardCount);
+      return { fullHand: h, discards, isReachi: false, reachiTileIdx: -1 };
+    });
+
+    // Pick random opponent as reachi player
+    const reachiIdx = Math.floor(Math.random() * 3);
+    opponents[reachiIdx].isReachi = true;
+    opponents[reachiIdx].reachiTileIdx = opponents[reachiIdx].discards.length - 1;
+
+    const reachiDiscards = opponents[reachiIdx].discards;
+
+    // All visible tiles: my hand + all discards + dora
+    const allVisible = [
+      ...myHand,
+      ...opponents.flatMap(o => o.discards),
+      doraTile,
+    ];
+
+    const safeInfo = computeSafeTiles(defenseLv, myHand, reachiDiscards, allVisible);
+
+    // Validate: at least 1 safe tile and at least 2 dangerous tiles in hand
+    const handKeySet = new Set(myHand.map(t => tileKey(t)));
+    const safeCount = safeInfo.correctKeys.length;
+    const dangerCount = handKeySet.size - safeCount;
+
+    if (safeCount >= 1 && dangerCount >= 2) {
+      const handWithIds = myHand.map((t, i) => ({ ...t, id: 3000 + i }));
+      return {
+        hand: sortTiles(handWithIds),
+        opponents: opponents.map(o => ({
+          discards: o.discards.map((t, i) => ({ ...t, id: 4000 + i + Math.random() * 10000 | 0 })),
+          isReachi: o.isReachi,
+          reachiTileIdx: o.reachiTileIdx,
+        })),
+        doraTile: { ...doraTile, id: 5000 },
+        safeInfo,
+      };
+    }
+  }
+  return null;
+}
+
 // ─── Meld simulation helpers ───
 function simulatePon(hand, opponentTile) {
   const k = tileKey(opponentTile);
@@ -2515,6 +2671,251 @@ function TenpaiQuizPanel({ quizHand, targetYaku, quizSelected, onToggleTile, onS
   );
 }
 
+// ─── Defense Quiz Components ───
+
+const SAFE_CATEGORY_STYLES = {
+  genbutsu: { label: "現", color: "#22c55e", bg: "rgba(34,197,94,0.15)", border: "rgba(34,197,94,0.4)" },
+  suji:     { label: "筋", color: "#3b82f6", bg: "rgba(59,130,246,0.15)", border: "rgba(59,130,246,0.4)" },
+  kabe:     { label: "壁", color: "#eab308", bg: "rgba(234,179,8,0.15)", border: "rgba(234,179,8,0.4)" },
+};
+
+function DefenseResultPanel({ quizResult, defenseQuizData, quizScore, onNext, defenseLevel, theme: th }) {
+  const { safeInfo } = quizResult;
+  return (
+    <div style={{
+      padding: "12px 14px", borderRadius: "var(--r-md)",
+      background: th.panelBgLight, border: `1px solid ${th.panelBorder}`,
+      marginTop: 12,
+    }}>
+      {/* Correct/Incorrect heading */}
+      <div style={{
+        fontSize: 18, fontWeight: 700, marginBottom: 10, textAlign: "center",
+        color: quizResult.isCorrect ? th.success : th.error,
+        fontFamily: "var(--font-main)",
+        animation: th.correctAnim || "cafeBounce 0.4s ease-out",
+      }}>
+        {quizResult.isCorrect ? "正解！" : "不正解…"}
+      </div>
+
+      {/* Safe tiles in hand with category */}
+      <div style={{
+        padding: "8px 10px", marginBottom: 8, borderRadius: "var(--r-md)",
+        background: _a(th.success, 0.08), border: `1px solid ${_a(th.success, 0.2)}`,
+      }}>
+        <div style={{ fontSize: 12, color: th.success, fontWeight: 700, marginBottom: 6, fontFamily: "var(--font-main)" }}>
+          手牌の安全牌（{safeInfo.safeHandDetails.length}種）
+        </div>
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+          {safeInfo.safeHandDetails.map(({ key, category }) => {
+            const cat = SAFE_CATEGORY_STYLES[category];
+            return (
+              <span key={key} style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+                <MiniTile suit={key[0]} num={parseInt(key.slice(1))} theme={th} />
+                <span style={{
+                  fontSize: 9, padding: "1px 4px", borderRadius: 6,
+                  background: cat.bg, color: cat.color, border: `1px solid ${cat.border}`,
+                  fontWeight: 700, fontFamily: "var(--font-ui)",
+                }}>{cat.label}</span>
+              </span>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Missed */}
+      {quizResult.missed.length > 0 && (
+        <div style={{
+          padding: "6px 10px", marginBottom: 6, borderRadius: "var(--r-md)",
+          background: _a(th.success, 0.05), border: `1px solid ${_a(th.success, 0.15)}`,
+        }}>
+          <span style={{ fontSize: 11, color: th.success, fontFamily: "var(--font-ui)" }}>
+            選び漏れ: {quizResult.missed.map(key => {
+              const suit = key[0], num = parseInt(key.slice(1));
+              return suit === "z" ? HONOR_NAMES[num] : `${NUM_KANJI[num]}${SUITS[suit]}`;
+            }).join("、")}
+          </span>
+        </div>
+      )}
+
+      {/* Wrong */}
+      {quizResult.wrong.length > 0 && (
+        <div style={{
+          padding: "6px 10px", marginBottom: 6, borderRadius: "var(--r-md)",
+          background: _a(th.error, 0.08), border: `1px solid ${_a(th.error, 0.15)}`,
+        }}>
+          <span style={{ fontSize: 11, color: th.error, fontFamily: "var(--font-ui)" }}>
+            誤選択: {quizResult.wrong.map(key => {
+              const suit = key[0], num = parseInt(key.slice(1));
+              return suit === "z" ? HONOR_NAMES[num] : `${NUM_KANJI[num]}${SUITS[suit]}`;
+            }).join("、")}
+          </span>
+        </div>
+      )}
+
+      {/* Full safe tiles explanation */}
+      <div style={{
+        padding: "8px 10px", marginBottom: 10, marginTop: 8, borderRadius: "var(--r-md)",
+        background: th.panelBgSubtle || _a(th.textMuted, 0.06),
+        border: `1px solid ${_a(th.textMuted, 0.15)}`,
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: th.textAccent, marginBottom: 8, fontFamily: "var(--font-main)" }}>
+          全安全牌一覧
+        </div>
+        {[
+          { key: "genbutsu", label: "現物", keys: safeInfo.genbutsuKeys, show: true },
+          { key: "suji", label: "筋", keys: safeInfo.sujiKeys, show: defenseLevel >= 1 },
+          { key: "kabe", label: "壁", keys: safeInfo.kabeKeys, show: defenseLevel >= 2 },
+        ].filter(g => g.show).map(group => {
+          const cat = SAFE_CATEGORY_STYLES[group.key];
+          const allKeys = [...group.keys].sort();
+          const extraKeys = safeInfo.extraSafe[group.key].sort();
+          if (allKeys.length === 0) return null;
+          return (
+            <div key={group.key} style={{ marginBottom: 6 }}>
+              <span style={{
+                fontSize: 10, padding: "1px 6px", borderRadius: 6, marginRight: 6,
+                background: cat.bg, color: cat.color, border: `1px solid ${cat.border}`,
+                fontWeight: 700, fontFamily: "var(--font-ui)",
+              }}>{cat.label}</span>
+              <div style={{ display: "inline-flex", gap: 2, flexWrap: "wrap", verticalAlign: "middle" }}>
+                {allKeys.map(k => (
+                  <span key={k} style={{ opacity: extraKeys.includes(k) ? 0.5 : 1 }}>
+                    <MiniTile suit={k[0]} num={parseInt(k.slice(1))} theme={th} />
+                  </span>
+                ))}
+              </div>
+              {extraKeys.length > 0 && (
+                <span style={{ fontSize: 9, color: th.textMuted, marginLeft: 4, fontFamily: "var(--font-ui)" }}>
+                  （薄色＝手牌外）
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ fontSize: 12, color: th.textSecondary, marginBottom: 12, fontFamily: "var(--font-ui)", textAlign: "center" }}>
+        スコア: {quizScore.correct} / {quizScore.total}
+      </div>
+      <div style={{ textAlign: "center" }}>
+        <button onClick={onNext} style={{
+          padding: "8px 28px", fontSize: 14, borderRadius: "var(--r-md)", fontWeight: 700,
+          fontFamily: "var(--font-main)", cursor: "pointer",
+          border: `1px solid ${th.accent}`, background: _a(th.accent, 0.2),
+          color: th.accent, letterSpacing: 2,
+        }}>次の問題</button>
+      </div>
+    </div>
+  );
+}
+
+function DefenseQuizPanel({ defenseQuizData, quizHand, quizSelected, onToggleTile, onSubmit, quizResult, onNext, quizScore, defenseLevel, theme: th }) {
+  const lvInfo = DEFENSE_LEVELS[defenseLevel];
+  return (
+    <div style={{
+      background: th.panelBg, borderRadius: "var(--r-lg)", padding: 16,
+      border: `1px solid ${th.panelBorder}`,
+    }}>
+      {/* Instruction */}
+      <div style={{ fontSize: 13, color: th.textAccent, fontWeight: 700, marginBottom: 10, letterSpacing: 1, textAlign: "center" }}>
+        リーチ者に対する安全牌を手牌からすべて選んでください（{lvInfo.name}）
+      </div>
+
+      {/* Dora display */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 6, marginBottom: 12, justifyContent: "center",
+      }}>
+        <span style={{ fontSize: 11, color: th.textSecondary, fontFamily: "var(--font-ui)" }}>ドラ表示:</span>
+        <MiniTile suit={defenseQuizData.doraTile.suit} num={defenseQuizData.doraTile.num} theme={th} />
+      </div>
+
+      {/* Opponent discards */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+        {defenseQuizData.opponents.map((opp, i) => (
+          <div key={i} style={{
+            padding: "8px 10px", borderRadius: "var(--r-md)",
+            background: opp.isReachi ? _a("#ef4444", 0.08) : th.panelBgLight,
+            border: opp.isReachi ? `2px solid ${_a("#ef4444", 0.5)}` : `1px solid ${th.panelBorder}`,
+          }}>
+            <div style={{
+              fontSize: 11, fontWeight: 700, marginBottom: 4,
+              color: opp.isReachi ? "#ef4444" : th.textSecondary,
+              fontFamily: "var(--font-ui)",
+            }}>
+              {opp.isReachi ? "🟥 リーチ" : `対面${i + 1}`}
+            </div>
+            <div style={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+              {opp.discards.map((t, j) => (
+                <span key={t.id} style={{
+                  display: "inline-block",
+                  transform: opp.isReachi && j === opp.reachiTileIdx ? "rotate(90deg)" : "none",
+                  margin: opp.isReachi && j === opp.reachiTileIdx ? "0 4px" : "0",
+                }}>
+                  <MiniTile suit={t.suit} num={t.num} theme={th} />
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Hand (selectable) */}
+      <div style={{
+        display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", alignItems: "flex-end",
+        background: th.panelBgLight, borderRadius: "var(--r-lg)", padding: "12px 8px", marginBottom: 16,
+      }}>
+        {quizHand.map(t => {
+          const key = tileKey(t);
+          const isSelected = quizSelected.includes(key);
+          let borderColor = "transparent";
+          let opacity = 1;
+
+          if (quizResult) {
+            const isCorrect = quizResult.correctKeys.includes(key);
+            if (isCorrect && isSelected) borderColor = th.success;
+            else if (isCorrect && !isSelected) { borderColor = th.success; opacity = 0.5; }
+            else if (!isCorrect && isSelected) borderColor = th.error;
+          }
+
+          return (
+            <div key={t.id} onClick={() => !quizResult && onToggleTile(key)} style={{
+              cursor: quizResult ? "default" : "pointer",
+              borderRadius: 6, padding: 2,
+              border: `2px solid ${isSelected && !quizResult ? th.accent : borderColor}`,
+              opacity,
+              transform: isSelected && !quizResult ? "translateY(-4px)" : "none",
+              transition: "all 0.15s",
+            }}>
+              <Tile tile={t} theme={th} />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Submit / Result */}
+      {!quizResult ? (
+        <div style={{ textAlign: "center" }}>
+          <button onClick={onSubmit} disabled={quizSelected.length === 0} style={{
+            padding: "8px 32px", fontSize: 14, borderRadius: "var(--r-md)", fontWeight: 700,
+            fontFamily: "var(--font-main)", cursor: quizSelected.length === 0 ? "not-allowed" : "pointer",
+            border: `1px solid ${th.accent}`, background: _a(th.accent, 0.2), color: th.accent,
+            opacity: quizSelected.length === 0 ? 0.4 : 1, letterSpacing: 2,
+          }}>回答する</button>
+        </div>
+      ) : (
+        <DefenseResultPanel
+          quizResult={quizResult}
+          defenseQuizData={defenseQuizData}
+          quizScore={quizScore}
+          onNext={onNext}
+          defenseLevel={defenseLevel}
+          theme={th}
+        />
+      )}
+    </div>
+  );
+}
+
 // ─── Quiz Mode Components ───
 function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYaku, onSubmit, quizResult, onNext, quizScore, ctx, maxHan, theme: th }) {
   const showNoYaku = maxHan >= 6;
@@ -2917,6 +3318,8 @@ export default function MahjongYakuTrainer() {
   const [quizScore, setQuizScore] = useState({ correct: 0, total: 0 });
   const [tenpaiTargetYaku, setTenpaiTargetYaku] = useState(null);
   const [tenpaiAcceptTiles, setTenpaiAcceptTiles] = useState([]);
+  const [defenseLevel, setDefenseLevel] = useState(0);
+  const [defenseQuizData, setDefenseQuizData] = useState(null);
 
   const currentLevel = LEVELS[level];
   const ctx = useMemo(() => ({ seatWind, roundWind }), [seatWind, roundWind]);
@@ -3172,6 +3575,45 @@ export default function MahjongYakuTrainer() {
     );
   }, []);
 
+  const startDefenseQuiz = useCallback(() => {
+    const q = generateDefenseQuiz(defenseLevel);
+    if (q) {
+      setDefenseQuizData(q);
+      setQuizHand(q.hand);
+      setQuizSelected([]);
+      setQuizResult(null);
+    } else {
+      // Generation failed — fall back to yaku quiz
+      setQuizType("yaku");
+      setDefenseQuizData(null);
+      const fallback = generateQuizHand(currentLevel.maxHan, ctx);
+      setQuizHand(fallback.hand);
+      setQuizMelds(fallback.melds);
+      setQuizSelected([]);
+      setQuizResult(null);
+    }
+  }, [defenseLevel, currentLevel, ctx]);
+
+  const submitDefenseQuiz = useCallback(() => {
+    if (!defenseQuizData) return;
+    const { correctKeys, safeHandDetails, extraSafe, genbutsuKeys, sujiKeys, kabeKeys } = defenseQuizData.safeInfo;
+    const missed = correctKeys.filter(k => !quizSelected.includes(k));
+    const wrong = quizSelected.filter(k => !correctKeys.includes(k));
+    const isCorrect = missed.length === 0 && wrong.length === 0;
+
+    setQuizResult({ correctKeys, missed, wrong, isCorrect, safeInfo: defenseQuizData.safeInfo });
+    setQuizScore(prev => ({
+      correct: prev.correct + (isCorrect ? 1 : 0),
+      total: prev.total + 1,
+    }));
+  }, [defenseQuizData, quizSelected]);
+
+  const toggleDefenseTile = useCallback((key) => {
+    setQuizSelected(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+  }, []);
+
   const submitQuiz = useCallback(() => {
     const yakuNames = quizCorrectYaku.map(y => y.name);
     const isNoYaku = yakuNames.length === 0;
@@ -3208,12 +3650,14 @@ export default function MahjongYakuTrainer() {
   }, [tenpaiAcceptTiles, quizSelected]);
 
   const nextQuiz = useCallback(() => {
-    if (quizType === "tenpai") {
+    if (quizType === "defense") {
+      startDefenseQuiz();
+    } else if (quizType === "tenpai") {
       startTenpaiQuiz();
     } else {
       startQuiz();
     }
-  }, [quizType, startQuiz, startTenpaiQuiz]);
+  }, [quizType, startQuiz, startTenpaiQuiz, startDefenseQuiz]);
 
   const switchMode = useCallback((newMode) => {
     setMode(newMode);
@@ -3257,10 +3701,28 @@ export default function MahjongYakuTrainer() {
         setQuizHand(fallback.hand);
         setQuizMelds(fallback.melds);
       }
+    } else if (newType === "defense") {
+      setQuizType("defense");
+      setTenpaiTargetYaku(null);
+      setTenpaiAcceptTiles([]);
+      const q = generateDefenseQuiz(0);
+      if (q) {
+        setDefenseQuizData(q);
+        setQuizHand(q.hand);
+        setDefenseLevel(0);
+      } else {
+        // Generation failed — fall back to yaku quiz
+        setQuizType("yaku");
+        setDefenseQuizData(null);
+        const fallback = generateQuizHand(currentLevel.maxHan, ctx);
+        setQuizHand(fallback.hand);
+        setQuizMelds(fallback.melds);
+      }
     } else {
       setQuizType("yaku");
       setTenpaiTargetYaku(null);
       setTenpaiAcceptTiles([]);
+      setDefenseQuizData(null);
       const q = generateQuizHand(currentLevel.maxHan, ctx);
       setQuizHand(q.hand);
       setQuizMelds(q.melds);
@@ -3317,6 +3779,7 @@ export default function MahjongYakuTrainer() {
           }}>{theme.titleDecor}</span>}麻雀役道場</h1>
           <p style={{ fontSize: 11, color: theme.textMuted, margin: "2px 0 0", fontFamily: "var(--font-ui)" }}>
             {mode === "trainer" ? "手牌から狙える役を見極めよう"
+              : quizType === "defense" ? "安全牌を見極めよう"
               : quizType === "tenpai" ? "待ち牌を見極めよう"
               : "成立している役を当てよう"}</p>
         </div>
@@ -3346,7 +3809,7 @@ export default function MahjongYakuTrainer() {
           {/* Quiz type sub-toggle */}
           {mode === "quiz" && (
             <div style={{ display: "flex", borderRadius: "var(--r-sm)", overflow: "hidden", border: `1px solid ${theme.toggleBorder}` }}>
-              {[{ key: "yaku", label: "役" }, { key: "tenpai", label: "聴牌" }].map(qt => (
+              {[{ key: "yaku", label: "役" }, { key: "tenpai", label: "聴牌" }, { key: "defense", label: "守備" }].map(qt => (
                 <button key={qt.key} onClick={() => switchQuizType(qt.key)} style={{
                   padding: "4px 10px", fontSize: 11, border: "none",
                   background: quizType === qt.key ? _a(theme.quizTypeAccent, 0.2) : theme.panelBgLight,
@@ -3356,40 +3819,63 @@ export default function MahjongYakuTrainer() {
               ))}
             </div>
           )}
-          {LEVELS.map((lv, i) => (
-            <button key={i} onClick={() => {
-              setLevel(i);
-              if (mode === "quiz") {
+          {quizType === "defense" && mode === "quiz" ? (
+            DEFENSE_LEVELS.map((lv, i) => (
+              <button key={`def-${i}`} onClick={() => {
+                setDefenseLevel(i);
                 setQuizSelected([]); setQuizResult(null); setQuizScore({ correct: 0, total: 0 });
-                if (quizType === "tenpai") {
-                  let found = false;
-                  for (let r = 0; r < 3; r++) {
-                    const q = generateTenpaiQuizHand(LEVELS[i].maxHan, ctx);
-                    if (q) {
-                      setQuizHand(q.hand); setQuizMelds(q.melds);
-                      setTenpaiTargetYaku(q.targetYaku); setTenpaiAcceptTiles(q.acceptTiles);
-                      found = true; break;
-                    }
-                  }
-                  if (!found) {
-                    setQuizType("yaku"); setTenpaiTargetYaku(null); setTenpaiAcceptTiles([]);
-                    const fb = generateQuizHand(LEVELS[i].maxHan, ctx);
-                    setQuizHand(fb.hand); setQuizMelds(fb.melds);
-                  }
+                const q = generateDefenseQuiz(i);
+                if (q) {
+                  setDefenseQuizData(q);
+                  setQuizHand(q.hand);
                 } else {
-                  const q = generateQuizHand(LEVELS[i].maxHan, ctx);
-                  setQuizHand(q.hand); setQuizMelds(q.melds);
-                  setTenpaiTargetYaku(null); setTenpaiAcceptTiles([]);
+                  setQuizType("yaku"); setDefenseQuizData(null);
+                  const fb = generateQuizHand(currentLevel.maxHan, ctx);
+                  setQuizHand(fb.hand); setQuizMelds(fb.melds);
                 }
-              }
-            }} style={{
-              padding: "4px 10px", fontSize: 11, borderRadius: "var(--r-sm)",
-              border: i === level ? `1px solid ${theme.accent}` : `1px solid ${theme.toggleBorder}`,
-              background: i === level ? _a(theme.accent, 0.15) : theme.panelBgLight,
-              color: i === level ? theme.accent : theme.textInfo, cursor: "pointer", fontFamily: "var(--font-ui)",
-            }}>{lv.name}</button>
-          ))}
-          <button onClick={mode === "trainer" ? dealHand : (quizType === "tenpai" ? startTenpaiQuiz : startQuiz)} style={{
+              }} style={{
+                padding: "4px 10px", fontSize: 11, borderRadius: "var(--r-sm)",
+                border: i === defenseLevel ? `1px solid ${theme.accent}` : `1px solid ${theme.toggleBorder}`,
+                background: i === defenseLevel ? _a(theme.accent, 0.15) : theme.panelBgLight,
+                color: i === defenseLevel ? theme.accent : theme.textInfo, cursor: "pointer", fontFamily: "var(--font-ui)",
+              }}>{lv.name}</button>
+            ))
+          ) : (
+            LEVELS.map((lv, i) => (
+              <button key={i} onClick={() => {
+                setLevel(i);
+                if (mode === "quiz") {
+                  setQuizSelected([]); setQuizResult(null); setQuizScore({ correct: 0, total: 0 });
+                  if (quizType === "tenpai") {
+                    let found = false;
+                    for (let r = 0; r < 3; r++) {
+                      const q = generateTenpaiQuizHand(LEVELS[i].maxHan, ctx);
+                      if (q) {
+                        setQuizHand(q.hand); setQuizMelds(q.melds);
+                        setTenpaiTargetYaku(q.targetYaku); setTenpaiAcceptTiles(q.acceptTiles);
+                        found = true; break;
+                      }
+                    }
+                    if (!found) {
+                      setQuizType("yaku"); setTenpaiTargetYaku(null); setTenpaiAcceptTiles([]);
+                      const fb = generateQuizHand(LEVELS[i].maxHan, ctx);
+                      setQuizHand(fb.hand); setQuizMelds(fb.melds);
+                    }
+                  } else {
+                    const q = generateQuizHand(LEVELS[i].maxHan, ctx);
+                    setQuizHand(q.hand); setQuizMelds(q.melds);
+                    setTenpaiTargetYaku(null); setTenpaiAcceptTiles([]);
+                  }
+                }
+              }} style={{
+                padding: "4px 10px", fontSize: 11, borderRadius: "var(--r-sm)",
+                border: i === level ? `1px solid ${theme.accent}` : `1px solid ${theme.toggleBorder}`,
+                background: i === level ? _a(theme.accent, 0.15) : theme.panelBgLight,
+                color: i === level ? theme.accent : theme.textInfo, cursor: "pointer", fontFamily: "var(--font-ui)",
+              }}>{lv.name}</button>
+            ))
+          )}
+          <button onClick={mode === "trainer" ? dealHand : (quizType === "defense" ? startDefenseQuiz : quizType === "tenpai" ? startTenpaiQuiz : startQuiz)} style={{
             padding: "6px 14px", fontSize: 12, borderRadius: "var(--r-sm)",
             border: `1px solid ${theme.accent}`, background: _a(theme.accent, 0.15),
             color: theme.accent, cursor: "pointer", fontWeight: 600, fontFamily: "var(--font-ui)",
@@ -3400,13 +3886,21 @@ export default function MahjongYakuTrainer() {
       {/* Info bar */}
       <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 12,
         color: theme.textSecondary, fontFamily: "var(--font-ui)", flexWrap: "wrap" }}>
-        <span>場風: {HONOR_NAMES[roundWind]}</span>
-        <span>自風: {HONOR_NAMES[seatWind]}</span>
-        {mode === "trainer" && <>
-          <span>巡目: {turnCount}</span>
-          <span>残り: {wall.length}枚</span>
-        </>}
-        <span>レベル: {currentLevel.label}</span>
+        {quizType === "defense" && mode === "quiz" ? (
+          <>
+            <span>守備レベル: {DEFENSE_LEVELS[defenseLevel].name}</span>
+          </>
+        ) : (
+          <>
+            <span>場風: {HONOR_NAMES[roundWind]}</span>
+            <span>自風: {HONOR_NAMES[seatWind]}</span>
+            {mode === "trainer" && <>
+              <span>巡目: {turnCount}</span>
+              <span>残り: {wall.length}枚</span>
+            </>}
+            <span>レベル: {currentLevel.label}</span>
+          </>
+        )}
         {mode === "quiz" && quizScore.total > 0 && (
           <span>正解率: {quizScore.correct}/{quizScore.total}</span>
         )}
@@ -3440,6 +3934,20 @@ export default function MahjongYakuTrainer() {
           onNext={nextQuiz}
           quizScore={quizScore}
           acceptTiles={tenpaiAcceptTiles}
+          theme={theme}
+        />
+      )}
+      {mode === "quiz" && quizHand.length > 0 && quizType === "defense" && defenseQuizData && (
+        <DefenseQuizPanel
+          defenseQuizData={defenseQuizData}
+          quizHand={quizHand}
+          quizSelected={quizSelected}
+          onToggleTile={toggleDefenseTile}
+          onSubmit={submitDefenseQuiz}
+          quizResult={quizResult}
+          onNext={nextQuiz}
+          quizScore={quizScore}
+          defenseLevel={defenseLevel}
           theme={theme}
         />
       )}
