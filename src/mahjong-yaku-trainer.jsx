@@ -1722,6 +1722,55 @@ function generateTenpaiQuizHand(maxHan, ctx) {
   return null;
 }
 
+function generateShantenQuizHand(maxHan, ctx) {
+  // Generate a hand and pick a yaku with distance 1-5
+  const strategies = [genPinfuHand, genTanyaoHand, genYakuhaiHand];
+  if (maxHan >= 2) strategies.push(genChiitoiHand, genToitoiHand, genSanAnkoHand, genSanshokuHand, genIttsuHand, genChantaHand);
+  if (maxHan >= 3) strategies.push(genHonitsuHand, genJunchanHand);
+  if (maxHan >= 6) strategies.push(genChinitsuHand);
+  if (maxHan >= 13) strategies.push(genKokushiHand, genSuuankoHand, genTsuiisoHand, genRyuiisoHand, genChinrotoHand);
+
+  for (let attempt = 0; attempt < 300; attempt++) {
+    // Build a random 14-tile hand by shuffling wall
+    const w = shuffle(buildWall());
+    const tiles14 = w.slice(0, 14).map((t, j) => ({ ...t, id: 3000 + j }));
+
+    const analysis = analyzeYaku(tiles14, [], ctx, maxHan);
+
+    // Find yaku with distance 1-5 (interesting range for quiz)
+    const candidates = analysis.filter(y => y.result.distance >= 1 && y.result.distance <= 5);
+    if (candidates.length === 0) continue;
+
+    const target = randItem(candidates);
+
+    // Generate wrong choices around the correct answer
+    const correct = target.result.distance;
+    const choicesSet = new Set([correct]);
+    // Add nearby values
+    for (const delta of [-2, -1, 1, 2, 3, -3]) {
+      if (choicesSet.size >= 4) break;
+      const v = correct + delta;
+      if (v >= 0 && v <= 8) choicesSet.add(v);
+    }
+    // Fill remaining with random values
+    while (choicesSet.size < 4) {
+      const v = randInt(0, 8);
+      choicesSet.add(v);
+    }
+    const choices = [...choicesSet].sort((a, b) => a - b);
+
+    return {
+      hand: sortTiles(tiles14),
+      melds: [],
+      targetYaku: { name: target.name, han: target.han, reading: target.reading, explain: target.explain },
+      correctDistance: correct,
+      choices,
+      distanceDesc: target.result.desc,
+    };
+  }
+  return null;
+}
+
 const LEVELS = [
   { name: "Lv.1 基本", maxHan: 1, label: "1翻" },
   { name: "Lv.2 応用", maxHan: 3, label: "〜3翻" },
@@ -2916,6 +2965,140 @@ function DefenseQuizPanel({ defenseQuizData, quizHand, quizSelected, onToggleTil
   );
 }
 
+// ─── Shanten Quiz Component ───
+function ShantenQuizPanel({ quizHand, shantenQuizData, quizSelected, onSelectChoice, onSubmit, quizResult, onNext, quizScore, theme: th }) {
+  const { targetYaku, choices, correctDistance, distanceDesc } = shantenQuizData;
+  return (
+    <div style={{
+      background: th.panelBg, borderRadius: "var(--r-lg)", padding: 16,
+      border: `1px solid ${th.panelBorder}`,
+    }}>
+      {/* Instruction */}
+      <div style={{ fontSize: 13, color: th.textAccent, fontWeight: 700, marginBottom: 8, letterSpacing: 1, textAlign: "center" }}>
+        この手牌で「{targetYaku.name}」まであと何手？
+      </div>
+
+      {/* Target yaku badge */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+        <span style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          padding: "4px 14px", borderRadius: 20,
+          background: _a(th.accent, 0.15), border: `1px solid ${_a(th.accent, 0.4)}`,
+        }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: th.accent,
+            fontFamily: "var(--font-main)" }}>{targetYaku.name}</span>
+          <span style={{ fontSize: 11, color: th.textAccent, fontFamily: "var(--font-ui)" }}>
+            {targetYaku.han >= 13 ? "役満" : `${targetYaku.han}翻`}
+          </span>
+        </span>
+      </div>
+
+      {/* Hand display */}
+      <div style={{
+        display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", alignItems: "flex-end",
+        background: th.panelBgLight, borderRadius: "var(--r-lg)", padding: "12px 8px", marginBottom: 16,
+      }}>
+        {quizHand.map(t => <Tile key={t.id} tile={t} theme={th} />)}
+      </div>
+
+      {/* Choices */}
+      <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 16, flexWrap: "wrap" }}>
+        {choices.map(c => {
+          const isSelected = quizSelected === c;
+          let bg = isSelected ? _a(th.accent, 0.25) : th.panelBgLight;
+          let border = isSelected ? `2px solid ${th.accent}` : `1px solid ${th.panelBorderLight}`;
+          let color = isSelected ? th.accent : th.textPrimary;
+
+          if (quizResult) {
+            if (c === correctDistance) {
+              bg = _a(th.success, 0.2);
+              border = `2px solid ${th.success}`;
+              color = th.success;
+            } else if (isSelected && c !== correctDistance) {
+              bg = _a(th.error, 0.15);
+              border = `2px solid ${th.error}`;
+              color = th.error;
+            }
+          }
+
+          return (
+            <button key={c} onClick={() => !quizResult && onSelectChoice(c)} style={{
+              width: 64, height: 64, fontSize: 24, fontWeight: 700, borderRadius: "var(--r-md)",
+              background: bg, border, color, cursor: quizResult ? "default" : "pointer",
+              fontFamily: "var(--font-main)", display: "flex", alignItems: "center", justifyContent: "center",
+              flexDirection: "column", transition: "all 0.15s ease",
+            }}>
+              <span>{c}</span>
+              <span style={{ fontSize: 10, fontWeight: 400, color: th.textMuted }}>手</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Submit / Result */}
+      {!quizResult ? (
+        <div style={{ textAlign: "center" }}>
+          <button onClick={onSubmit} disabled={quizSelected === null} style={{
+            padding: "8px 32px", fontSize: 14, borderRadius: "var(--r-md)", fontWeight: 700,
+            fontFamily: "var(--font-main)", cursor: quizSelected === null ? "not-allowed" : "pointer",
+            border: `1px solid ${th.accent}`,
+            background: quizSelected === null ? th.panelBgLight : _a(th.accent, 0.2),
+            color: quizSelected === null ? th.textFaint : th.accent, letterSpacing: 2,
+          }}>回答する</button>
+        </div>
+      ) : (
+        <div>
+          <div style={{
+            fontSize: 18, fontWeight: 700, marginBottom: 8, textAlign: "center",
+            color: quizResult.isCorrect ? th.success : th.error,
+            fontFamily: "var(--font-main)",
+            animation: th.correctAnim || "none",
+          }}>
+            {quizResult.isCorrect ? "正解！" : "不正解…"}
+          </div>
+
+          {/* Answer explanation */}
+          <div style={{
+            padding: "10px 14px", marginBottom: 10, borderRadius: "var(--r-md)",
+            background: _a(th.success, 0.08), border: `1px solid ${_a(th.success, 0.2)}`,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: th.success, marginBottom: 4, fontFamily: "var(--font-main)" }}>
+              正解: {correctDistance}手
+            </div>
+            <div style={{ fontSize: 12, color: th.textSecondary, fontFamily: "var(--font-ui)" }}>
+              {distanceDesc}
+            </div>
+          </div>
+
+          {/* Yaku explanation */}
+          {targetYaku.explain && (
+            <div style={{
+              padding: "6px 10px", marginBottom: 8, borderRadius: "var(--r-md)",
+              background: th.panelBgSubtle,
+            }}>
+              <span style={{ fontSize: 11, color: th.textSecondary, fontFamily: "var(--font-ui)" }}>
+                {targetYaku.explain}
+              </span>
+            </div>
+          )}
+
+          <div style={{ fontSize: 12, color: th.textSecondary, marginBottom: 12, fontFamily: "var(--font-ui)", textAlign: "center" }}>
+            スコア: {quizScore.correct} / {quizScore.total}
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <button onClick={onNext} style={{
+              padding: "8px 28px", fontSize: 14, borderRadius: "var(--r-md)", fontWeight: 700,
+              fontFamily: "var(--font-main)", cursor: "pointer",
+              border: `1px solid ${th.accent}`, background: _a(th.accent, 0.2),
+              color: th.accent, letterSpacing: 2,
+            }}>次の問題</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Quiz Mode Components ───
 function QuizPanel({ quizHand, quizMelds, quizYakuList, quizSelected, onToggleYaku, onSubmit, quizResult, onNext, quizScore, ctx, maxHan, theme: th }) {
   const showNoYaku = maxHan >= 6;
@@ -3320,6 +3503,7 @@ export default function MahjongYakuTrainer() {
   const [tenpaiAcceptTiles, setTenpaiAcceptTiles] = useState([]);
   const [defenseLevel, setDefenseLevel] = useState(0);
   const [defenseQuizData, setDefenseQuizData] = useState(null);
+  const [shantenQuizData, setShantenQuizData] = useState(null);
 
   const currentLevel = LEVELS[level];
   const ctx = useMemo(() => ({ seatWind, roundWind }), [seatWind, roundWind]);
@@ -3614,6 +3798,42 @@ export default function MahjongYakuTrainer() {
     );
   }, []);
 
+  const startShantenQuiz = useCallback(() => {
+    for (let i = 0; i < 3; i++) {
+      const q = generateShantenQuizHand(currentLevel.maxHan, ctx);
+      if (q) {
+        setShantenQuizData(q);
+        setQuizHand(q.hand);
+        setQuizMelds(q.melds);
+        setQuizSelected(null);
+        setQuizResult(null);
+        return;
+      }
+    }
+    // Generation failed — fall back to yaku quiz
+    setQuizType("yaku");
+    setShantenQuizData(null);
+    const fallback = generateQuizHand(currentLevel.maxHan, ctx);
+    setQuizHand(fallback.hand);
+    setQuizMelds(fallback.melds);
+    setQuizSelected(null);
+    setQuizResult(null);
+  }, [currentLevel, ctx]);
+
+  const selectShantenChoice = useCallback((value) => {
+    setQuizSelected(value);
+  }, []);
+
+  const submitShantenQuiz = useCallback(() => {
+    if (!shantenQuizData || quizSelected === null) return;
+    const isCorrect = quizSelected === shantenQuizData.correctDistance;
+    setQuizResult({ isCorrect });
+    setQuizScore(prev => ({
+      correct: prev.correct + (isCorrect ? 1 : 0),
+      total: prev.total + 1,
+    }));
+  }, [shantenQuizData, quizSelected]);
+
   const submitQuiz = useCallback(() => {
     const yakuNames = quizCorrectYaku.map(y => y.name);
     const isNoYaku = yakuNames.length === 0;
@@ -3654,10 +3874,12 @@ export default function MahjongYakuTrainer() {
       startDefenseQuiz();
     } else if (quizType === "tenpai") {
       startTenpaiQuiz();
+    } else if (quizType === "shanten") {
+      startShantenQuiz();
     } else {
       startQuiz();
     }
-  }, [quizType, startQuiz, startTenpaiQuiz, startDefenseQuiz]);
+  }, [quizType, startQuiz, startTenpaiQuiz, startDefenseQuiz, startShantenQuiz]);
 
   const switchMode = useCallback((newMode) => {
     setMode(newMode);
@@ -3665,6 +3887,7 @@ export default function MahjongYakuTrainer() {
       setQuizType("yaku");
       setTenpaiTargetYaku(null);
       setTenpaiAcceptTiles([]);
+      setShantenQuizData(null);
       const q = generateQuizHand(currentLevel.maxHan, ctx);
       setQuizHand(q.hand);
       setQuizMelds(q.melds);
@@ -3705,6 +3928,7 @@ export default function MahjongYakuTrainer() {
       setQuizType("defense");
       setTenpaiTargetYaku(null);
       setTenpaiAcceptTiles([]);
+      setShantenQuizData(null);
       const q = generateDefenseQuiz(0);
       if (q) {
         setDefenseQuizData(q);
@@ -3718,11 +3942,35 @@ export default function MahjongYakuTrainer() {
         setQuizHand(fallback.hand);
         setQuizMelds(fallback.melds);
       }
+    } else if (newType === "shanten") {
+      let found = false;
+      for (let i = 0; i < 3; i++) {
+        const q = generateShantenQuizHand(currentLevel.maxHan, ctx);
+        if (q) {
+          setQuizType("shanten");
+          setShantenQuizData(q);
+          setQuizHand(q.hand);
+          setQuizMelds(q.melds);
+          setTenpaiTargetYaku(null);
+          setTenpaiAcceptTiles([]);
+          setDefenseQuizData(null);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        setQuizType("yaku");
+        setShantenQuizData(null);
+        const fallback = generateQuizHand(currentLevel.maxHan, ctx);
+        setQuizHand(fallback.hand);
+        setQuizMelds(fallback.melds);
+      }
     } else {
       setQuizType("yaku");
       setTenpaiTargetYaku(null);
       setTenpaiAcceptTiles([]);
       setDefenseQuizData(null);
+      setShantenQuizData(null);
       const q = generateQuizHand(currentLevel.maxHan, ctx);
       setQuizHand(q.hand);
       setQuizMelds(q.melds);
@@ -3781,6 +4029,7 @@ export default function MahjongYakuTrainer() {
             {mode === "trainer" ? "手牌から狙える役を見極めよう"
               : quizType === "defense" ? "安全牌を見極めよう"
               : quizType === "tenpai" ? "待ち牌を見極めよう"
+              : quizType === "shanten" ? "役までの距離を見極めよう"
               : "成立している役を当てよう"}</p>
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -3809,7 +4058,7 @@ export default function MahjongYakuTrainer() {
           {/* Quiz type sub-toggle */}
           {mode === "quiz" && (
             <div style={{ display: "flex", borderRadius: "var(--r-sm)", overflow: "hidden", border: `1px solid ${theme.toggleBorder}` }}>
-              {[{ key: "yaku", label: "役" }, { key: "tenpai", label: "聴牌" }, { key: "defense", label: "守備" }].map(qt => (
+              {[{ key: "yaku", label: "役" }, { key: "tenpai", label: "聴牌" }, { key: "shanten", label: "向聴" }, { key: "defense", label: "守備" }].map(qt => (
                 <button key={qt.key} onClick={() => switchQuizType(qt.key)} style={{
                   padding: "4px 10px", fontSize: 11, border: "none",
                   background: quizType === qt.key ? _a(theme.quizTypeAccent, 0.2) : theme.panelBgLight,
@@ -3861,6 +4110,21 @@ export default function MahjongYakuTrainer() {
                       const fb = generateQuizHand(LEVELS[i].maxHan, ctx);
                       setQuizHand(fb.hand); setQuizMelds(fb.melds);
                     }
+                  } else if (quizType === "shanten") {
+                    let found = false;
+                    for (let r = 0; r < 3; r++) {
+                      const q = generateShantenQuizHand(LEVELS[i].maxHan, ctx);
+                      if (q) {
+                        setShantenQuizData(q);
+                        setQuizHand(q.hand); setQuizMelds(q.melds);
+                        found = true; break;
+                      }
+                    }
+                    if (!found) {
+                      setQuizType("yaku"); setShantenQuizData(null);
+                      const fb = generateQuizHand(LEVELS[i].maxHan, ctx);
+                      setQuizHand(fb.hand); setQuizMelds(fb.melds);
+                    }
                   } else {
                     const q = generateQuizHand(LEVELS[i].maxHan, ctx);
                     setQuizHand(q.hand); setQuizMelds(q.melds);
@@ -3875,7 +4139,7 @@ export default function MahjongYakuTrainer() {
               }}>{lv.name}</button>
             ))
           )}
-          <button onClick={mode === "trainer" ? dealHand : (quizType === "defense" ? startDefenseQuiz : quizType === "tenpai" ? startTenpaiQuiz : startQuiz)} style={{
+          <button onClick={mode === "trainer" ? dealHand : (quizType === "defense" ? startDefenseQuiz : quizType === "tenpai" ? startTenpaiQuiz : quizType === "shanten" ? startShantenQuiz : startQuiz)} style={{
             padding: "6px 14px", fontSize: 12, borderRadius: "var(--r-sm)",
             border: `1px solid ${theme.accent}`, background: _a(theme.accent, 0.15),
             color: theme.accent, cursor: "pointer", fontWeight: 600, fontFamily: "var(--font-ui)",
@@ -3948,6 +4212,19 @@ export default function MahjongYakuTrainer() {
           onNext={nextQuiz}
           quizScore={quizScore}
           defenseLevel={defenseLevel}
+          theme={theme}
+        />
+      )}
+      {mode === "quiz" && quizHand.length > 0 && quizType === "shanten" && shantenQuizData && (
+        <ShantenQuizPanel
+          quizHand={quizHand}
+          shantenQuizData={shantenQuizData}
+          quizSelected={quizSelected}
+          onSelectChoice={selectShantenChoice}
+          onSubmit={submitShantenQuiz}
+          quizResult={quizResult}
+          onNext={nextQuiz}
+          quizScore={quizScore}
           theme={theme}
         />
       )}
