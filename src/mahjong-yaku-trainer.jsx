@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { countDisjointPeikouPairs, findPeikouGroups } from "./peikou.js";
 
 // ─── Tile Constants ───
 const SUITS = { m: "萬", p: "筒", s: "索", z: "字" };
@@ -570,9 +571,10 @@ const YAKU_DEFS = [
           if (d < best) { best = d; bestSuit = suit; bestStart = start; }
         }
       if (best === 0) {
-        const shuntsuKeys = struct.shuntsuList.map(g => g.key);
-        const hasDup = shuntsuKeys.some((k, i) => shuntsuKeys.indexOf(k) !== i);
-        if (!hasDup) best = 1;
+        const hasPeikou = hand.length === 14
+          ? !!findPeikouGroups(hand, 1)
+          : countDisjointPeikouPairs(hand) >= 1;
+        if (!hasPeikou) best = 1;
       }
       const wanted = [];
       for (let i = 0; i < 3; i++) {
@@ -830,12 +832,11 @@ const YAKU_DEFS = [
     explain: "一盃口を2組作る。門前限定。七対子と同じ形になることもある。",
     calc: (hand, melds, ctx, struct) => {
       if (melds.length > 0) return { distance: 99, desc: "門前のみ", obstacles: [], wanted: [], targetDesc: "" };
-      const counts = countByKey(hand);
-      let pairSeqs = 0;
-      for (const suit of ["m", "p", "s"])
-        for (let s = 1; s <= 7; s++)
-          if (Math.min(...[0, 1, 2].map(i => counts[`${suit}${s + i}`] || 0)) >= 2) pairSeqs++;
-      const dist = Math.max(0, (2 - pairSeqs) * 3);
+      const pairSeqs = Math.min(2, countDisjointPeikouPairs(hand));
+      const hasRyanpeikou = hand.length === 14
+        ? !!findPeikouGroups(hand, 2)
+        : pairSeqs >= 2;
+      const dist = hasRyanpeikou ? 0 : Math.max(1, (2 - pairSeqs) * 3);
       return { distance: dist, desc: `同順対: ${pairSeqs}/2`,
         obstacles: [], wanted: [],
         targetDesc: "同一順子×2 を2セット + 対子" };
@@ -2342,18 +2343,29 @@ function getYakuKeyTiles(yakuName, hand, ctx) {
 
     case "一盃口":
     case "二盃口": {
-      const tiles = [];
-      for (const suit of ["m", "p", "s"]) {
-        for (let s = 1; s <= 7; s++) {
-          const keys = [0, 1, 2].map(i => `${suit}${s + i}`);
-          if (keys.every(k => (counts[k] || 0) >= 2)) {
-            keys.forEach(k => {
-              hand.filter(t => tileKey(t) === k).slice(0, 2).forEach(t => tiles.push(t));
-            });
-          }
+      const groups = findPeikouGroups(hand, yakuName === "二盃口" ? 2 : 1);
+      if (!groups) return sortTiles(hand);
+      const sequenceCounts = {};
+      groups.filter(g => g.type === "shuntsu").forEach(g => {
+        sequenceCounts[g.key] = (sequenceCounts[g.key] || 0) + 1;
+      });
+      const needed = {};
+      let pairs = 0;
+      for (const [key, count] of Object.entries(sequenceCounts)) {
+        const take = Math.min(Math.floor(count / 2), (yakuName === "二盃口" ? 2 : 1) - pairs);
+        if (take === 0) continue;
+        pairs += take;
+        for (let offset = 0; offset < 3; offset++) {
+          const tileType = `${key[0]}${Number(key.slice(1)) + offset}`;
+          needed[tileType] = (needed[tileType] || 0) + take * 2;
         }
       }
-      return tiles.length > 0 ? sortTiles(tiles) : sortTiles(hand);
+      return sortTiles(hand).filter(t => {
+        const key = tileKey(t);
+        if (!needed[key]) return false;
+        needed[key]--;
+        return true;
+      });
     }
 
     default:
