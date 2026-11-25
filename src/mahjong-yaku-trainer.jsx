@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { countDisjointPeikouPairs, findPeikouGroups } from "./peikou.js";
+import { randomWindContext, windYakuHan } from "./wind-context.js";
 
 // ─── Tile Constants ───
 const SUITS = { m: "萬", p: "筒", s: "索", z: "字" };
@@ -939,18 +940,20 @@ const YAKU_DEFS = [
 function analyzeYaku(handTiles, melds, ctx, maxHan) {
   const struct = analyzeStructure(handTiles);
   // 風牌の役牌は場風・自風に該当するもののみ表示
-  const activeWindKeys = new Set();
-  if (ctx?.seatWind) activeWindKeys.add(`z${ctx.seatWind}`);
-  if (ctx?.roundWind) activeWindKeys.add(`z${ctx.roundWind}`);
   return YAKU_DEFS
     .filter(y => y.han <= maxHan)
     .filter(y => {
       if (!y.yakuhaiKey) return true; // 役牌以外はそのまま
       if (!["z1","z2","z3","z4"].includes(y.yakuhaiKey)) return true; // 三元牌はそのまま
-      return activeWindKeys.has(y.yakuhaiKey); // 風牌は場風・自風のみ
+      return windYakuHan(ctx, y.yakuhaiKey) > 0; // 風牌は場風・自風のみ
     })
-    .map(y => ({ name: y.name, reading: y.reading, han: y.han, openHan: y.openHan || null, explain: y.explain,
-      result: y.calc(handTiles, melds, ctx, struct) }))
+    .map(y => {
+      const windHan = y.yakuhaiKey ? windYakuHan(ctx, y.yakuhaiKey) : 0;
+      return { name: y.name, reading: y.reading, han: windHan || y.han,
+        openHan: y.openHan || null,
+        explain: windHan === 2 ? `${y.explain} 場風と自風が同じため2翻。` : y.explain,
+        result: y.calc(handTiles, melds, ctx, struct) };
+    })
     .filter(r => r.result.distance < 13);
 }
 
@@ -1035,7 +1038,7 @@ function calculateFu(agariInfo, melds, resolvedYaku, ctx) {
   if (ctx?.seatWind) yakuKeys.add(`z${ctx.seatWind}`);
   if (ctx?.roundWind) yakuKeys.add(`z${ctx.roundWind}`);
   struct.toitsuList?.forEach(g => {
-    if (yakuKeys.has(g.key)) fu += 2;
+    if (yakuKeys.has(g.key)) fu += Math.max(2, windYakuHan(ctx, g.key) * 2);
   });
 
   return Math.ceil(fu / 10) * 10;
@@ -3486,8 +3489,7 @@ export default function MahjongYakuTrainer() {
   const [level, setLevel] = useState(1);
   const [opponentTile, setOpponentTile] = useState(null);
   const [turnCount, setTurnCount] = useState(0);
-  const [seatWind] = useState(1);
-  const [roundWind] = useState(1);
+  const [ctx, setCtx] = useState(randomWindContext);
   const [selectedTileId, setSelectedTileId] = useState(null);
   const [meldPreview, setMeldPreview] = useState(null);
   const [expandedYaku, setExpandedYaku] = useState(null);
@@ -3518,13 +3520,18 @@ export default function MahjongYakuTrainer() {
   const [shantenQuizData, setShantenQuizData] = useState(null);
 
   const currentLevel = LEVELS[level];
-  const ctx = useMemo(() => ({ seatWind, roundWind }), [seatWind, roundWind]);
+  const nextQuizContext = useCallback(() => {
+    const next = randomWindContext(ctx);
+    setCtx(next);
+    return next;
+  }, [ctx]);
 
   const resetSelections = useCallback(() => {
     setSelectedTileId(null); setMeldPreview(null);
   }, []);
 
-  const dealHand = useCallback(() => {
+  const dealHand = useCallback((randomizeWind = true) => {
+    if (randomizeWind) setCtx(previous => randomWindContext(previous));
     const w = shuffle(buildWall());
     setWall(w.slice(13)); setHand(sortTiles(w.slice(0, 13)));
     setMelds([]); setDiscardPool([]); setDrawnTile(null);
@@ -3532,7 +3539,7 @@ export default function MahjongYakuTrainer() {
   }, [resetSelections]);
 
   useEffect(() => {
-    dealHand();
+    dealHand(false);
     if (mode === "quiz") {
       const q = generateQuizHand(currentLevel.maxHan, ctx);
       setQuizHand(q.hand);
@@ -3722,19 +3729,21 @@ export default function MahjongYakuTrainer() {
   }, [mode, quizHand, quizMelds, ctx, currentLevel]);
 
   const startQuiz = useCallback(() => {
-    const q = generateQuizHand(currentLevel.maxHan, ctx);
+    const questionCtx = nextQuizContext();
+    const q = generateQuizHand(currentLevel.maxHan, questionCtx);
     setQuizHand(q.hand);
     setQuizMelds(q.melds);
     setQuizSelected([]);
     setQuizResult(null);
     setTenpaiTargetYaku(null);
     setTenpaiAcceptTiles([]);
-  }, [currentLevel, ctx]);
+  }, [currentLevel, nextQuizContext]);
 
   const startTenpaiQuiz = useCallback(() => {
+    const questionCtx = nextQuizContext();
     // Try up to 3 times
     for (let i = 0; i < 3; i++) {
-      const q = generateTenpaiQuizHand(currentLevel.maxHan, ctx);
+      const q = generateTenpaiQuizHand(currentLevel.maxHan, questionCtx);
       if (q) {
         setQuizHand(q.hand);
         setQuizMelds(q.melds);
@@ -3749,12 +3758,12 @@ export default function MahjongYakuTrainer() {
     setQuizType("yaku");
     setTenpaiTargetYaku(null);
     setTenpaiAcceptTiles([]);
-    const fallback = generateQuizHand(currentLevel.maxHan, ctx);
+    const fallback = generateQuizHand(currentLevel.maxHan, questionCtx);
     setQuizHand(fallback.hand);
     setQuizMelds(fallback.melds);
     setQuizSelected([]);
     setQuizResult(null);
-  }, [currentLevel, ctx]);
+  }, [currentLevel, nextQuizContext]);
 
   const toggleQuizYaku = useCallback((name) => {
     setQuizSelected(prev => {
@@ -3782,13 +3791,13 @@ export default function MahjongYakuTrainer() {
       // Generation failed — fall back to yaku quiz
       setQuizType("yaku");
       setDefenseQuizData(null);
-      const fallback = generateQuizHand(currentLevel.maxHan, ctx);
+      const fallback = generateQuizHand(currentLevel.maxHan, nextQuizContext());
       setQuizHand(fallback.hand);
       setQuizMelds(fallback.melds);
       setQuizSelected([]);
       setQuizResult(null);
     }
-  }, [defenseLevel, currentLevel, ctx]);
+  }, [defenseLevel, currentLevel, nextQuizContext]);
 
   const submitDefenseQuiz = useCallback(() => {
     if (!defenseQuizData) return;
@@ -3811,8 +3820,9 @@ export default function MahjongYakuTrainer() {
   }, []);
 
   const startShantenQuiz = useCallback(() => {
+    const questionCtx = nextQuizContext();
     for (let i = 0; i < 3; i++) {
-      const q = generateShantenQuizHand(currentLevel.maxHan, ctx);
+      const q = generateShantenQuizHand(currentLevel.maxHan, questionCtx);
       if (q) {
         setShantenQuizData(q);
         setQuizHand(q.hand);
@@ -3825,12 +3835,12 @@ export default function MahjongYakuTrainer() {
     // Generation failed — fall back to yaku quiz
     setQuizType("yaku");
     setShantenQuizData(null);
-    const fallback = generateQuizHand(currentLevel.maxHan, ctx);
+    const fallback = generateQuizHand(currentLevel.maxHan, questionCtx);
     setQuizHand(fallback.hand);
     setQuizMelds(fallback.melds);
     setQuizSelected(null);
     setQuizResult(null);
-  }, [currentLevel, ctx]);
+  }, [currentLevel, nextQuizContext]);
 
   const selectShantenChoice = useCallback((value) => {
     setQuizSelected(value);
@@ -3896,27 +3906,31 @@ export default function MahjongYakuTrainer() {
   const switchMode = useCallback((newMode) => {
     setMode(newMode);
     if (newMode === "quiz") {
+      const questionCtx = nextQuizContext();
       setQuizType("yaku");
       setTenpaiTargetYaku(null);
       setTenpaiAcceptTiles([]);
       setShantenQuizData(null);
-      const q = generateQuizHand(currentLevel.maxHan, ctx);
+      const q = generateQuizHand(currentLevel.maxHan, questionCtx);
       setQuizHand(q.hand);
       setQuizMelds(q.melds);
       setQuizSelected([]);
       setQuizResult(null);
       setQuizScore({ correct: 0, total: 0 });
+    } else {
+      dealHand();
     }
-  }, [currentLevel, ctx]);
+  }, [currentLevel, nextQuizContext, dealHand]);
 
   const switchQuizType = useCallback((newType) => {
+    const questionCtx = nextQuizContext();
     setQuizSelected([]);
     setQuizResult(null);
     setQuizScore({ correct: 0, total: 0 });
     if (newType === "tenpai") {
       let found = false;
       for (let i = 0; i < 3; i++) {
-        const q = generateTenpaiQuizHand(currentLevel.maxHan, ctx);
+        const q = generateTenpaiQuizHand(currentLevel.maxHan, questionCtx);
         if (q) {
           setQuizType("tenpai");
           setQuizHand(q.hand);
@@ -3932,7 +3946,7 @@ export default function MahjongYakuTrainer() {
         setQuizType("yaku");
         setTenpaiTargetYaku(null);
         setTenpaiAcceptTiles([]);
-        const fallback = generateQuizHand(currentLevel.maxHan, ctx);
+        const fallback = generateQuizHand(currentLevel.maxHan, questionCtx);
         setQuizHand(fallback.hand);
         setQuizMelds(fallback.melds);
       }
@@ -3950,14 +3964,14 @@ export default function MahjongYakuTrainer() {
         // Generation failed — fall back to yaku quiz
         setQuizType("yaku");
         setDefenseQuizData(null);
-        const fallback = generateQuizHand(currentLevel.maxHan, ctx);
+        const fallback = generateQuizHand(currentLevel.maxHan, questionCtx);
         setQuizHand(fallback.hand);
         setQuizMelds(fallback.melds);
       }
     } else if (newType === "shanten") {
       let found = false;
       for (let i = 0; i < 3; i++) {
-        const q = generateShantenQuizHand(currentLevel.maxHan, ctx);
+        const q = generateShantenQuizHand(currentLevel.maxHan, questionCtx);
         if (q) {
           setQuizType("shanten");
           setShantenQuizData(q);
@@ -3973,7 +3987,7 @@ export default function MahjongYakuTrainer() {
       if (!found) {
         setQuizType("yaku");
         setShantenQuizData(null);
-        const fallback = generateQuizHand(currentLevel.maxHan, ctx);
+        const fallback = generateQuizHand(currentLevel.maxHan, questionCtx);
         setQuizHand(fallback.hand);
         setQuizMelds(fallback.melds);
       }
@@ -3983,11 +3997,11 @@ export default function MahjongYakuTrainer() {
       setTenpaiAcceptTiles([]);
       setDefenseQuizData(null);
       setShantenQuizData(null);
-      const q = generateQuizHand(currentLevel.maxHan, ctx);
+      const q = generateQuizHand(currentLevel.maxHan, questionCtx);
       setQuizHand(q.hand);
       setQuizMelds(q.melds);
     }
-  }, [currentLevel, ctx]);
+  }, [currentLevel, nextQuizContext]);
 
   return (
     <div data-theme={themeKey} style={{
@@ -4091,7 +4105,7 @@ export default function MahjongYakuTrainer() {
                   setQuizHand(q.hand);
                 } else {
                   setQuizType("yaku"); setDefenseQuizData(null);
-                  const fb = generateQuizHand(currentLevel.maxHan, ctx);
+                  const fb = generateQuizHand(currentLevel.maxHan, nextQuizContext());
                   setQuizHand(fb.hand); setQuizMelds(fb.melds);
                 }
               }} style={{
@@ -4106,11 +4120,12 @@ export default function MahjongYakuTrainer() {
               <button key={i} onClick={() => {
                 setLevel(i);
                 if (mode === "quiz") {
+                  const questionCtx = nextQuizContext();
                   setQuizSelected([]); setQuizResult(null); setQuizScore({ correct: 0, total: 0 });
                   if (quizType === "tenpai") {
                     let found = false;
                     for (let r = 0; r < 3; r++) {
-                      const q = generateTenpaiQuizHand(LEVELS[i].maxHan, ctx);
+                      const q = generateTenpaiQuizHand(LEVELS[i].maxHan, questionCtx);
                       if (q) {
                         setQuizHand(q.hand); setQuizMelds(q.melds);
                         setTenpaiTargetYaku(q.targetYaku); setTenpaiAcceptTiles(q.acceptTiles);
@@ -4119,13 +4134,13 @@ export default function MahjongYakuTrainer() {
                     }
                     if (!found) {
                       setQuizType("yaku"); setTenpaiTargetYaku(null); setTenpaiAcceptTiles([]);
-                      const fb = generateQuizHand(LEVELS[i].maxHan, ctx);
+                      const fb = generateQuizHand(LEVELS[i].maxHan, questionCtx);
                       setQuizHand(fb.hand); setQuizMelds(fb.melds);
                     }
                   } else if (quizType === "shanten") {
                     let found = false;
                     for (let r = 0; r < 3; r++) {
-                      const q = generateShantenQuizHand(LEVELS[i].maxHan, ctx);
+                      const q = generateShantenQuizHand(LEVELS[i].maxHan, questionCtx);
                       if (q) {
                         setShantenQuizData(q);
                         setQuizHand(q.hand); setQuizMelds(q.melds);
@@ -4134,11 +4149,11 @@ export default function MahjongYakuTrainer() {
                     }
                     if (!found) {
                       setQuizType("yaku"); setShantenQuizData(null);
-                      const fb = generateQuizHand(LEVELS[i].maxHan, ctx);
+                      const fb = generateQuizHand(LEVELS[i].maxHan, questionCtx);
                       setQuizHand(fb.hand); setQuizMelds(fb.melds);
                     }
                   } else {
-                    const q = generateQuizHand(LEVELS[i].maxHan, ctx);
+                    const q = generateQuizHand(LEVELS[i].maxHan, questionCtx);
                     setQuizHand(q.hand); setQuizMelds(q.melds);
                     setTenpaiTargetYaku(null); setTenpaiAcceptTiles([]);
                   }
@@ -4151,7 +4166,7 @@ export default function MahjongYakuTrainer() {
               }}>{lv.name}</button>
             ))
           )}
-          <button onClick={mode === "trainer" ? dealHand : (quizType === "defense" ? startDefenseQuiz : quizType === "tenpai" ? startTenpaiQuiz : quizType === "shanten" ? startShantenQuiz : startQuiz)} style={{
+          <button onClick={mode === "trainer" ? () => dealHand() : (quizType === "defense" ? startDefenseQuiz : quizType === "tenpai" ? startTenpaiQuiz : quizType === "shanten" ? startShantenQuiz : startQuiz)} style={{
             padding: "6px 14px", fontSize: 12, borderRadius: "var(--r-sm)",
             border: `1px solid ${theme.accent}`, background: _a(theme.accent, 0.15),
             color: theme.accent, cursor: "pointer", fontWeight: 600, fontFamily: "var(--font-ui)",
@@ -4168,8 +4183,8 @@ export default function MahjongYakuTrainer() {
           </>
         ) : (
           <>
-            <span>場風: {HONOR_NAMES[roundWind]}</span>
-            <span>自風: {HONOR_NAMES[seatWind]}</span>
+            <span>場風: {HONOR_NAMES[ctx.roundWind]}</span>
+            <span>自風: {HONOR_NAMES[ctx.seatWind]}</span>
             {mode === "trainer" && <>
               <span>巡目: {turnCount}</span>
               <span>残り: {wall.length}枚</span>
