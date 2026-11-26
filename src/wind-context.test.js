@@ -13,17 +13,18 @@ test("場風と自風の全16通りを選べる", () => {
   assert.ok(combinations.has("44"));
 });
 
-test("次の問題では前回と同じ場風・自風の組み合わせにならない", () => {
+test("次の問題では場風と自風がそれぞれ前回から変わる", () => {
   for (let roundWind = 1; roundWind <= 4; roundWind++) {
     for (let seatWind = 1; seatWind <= 4; seatWind++) {
       const previous = { roundWind, seatWind };
       const combinations = new Set();
-      for (let choice = 0; choice < 15; choice++) {
-        const next = randomWindContext(previous, () => choice / 15);
-        assert.notDeepEqual(next, previous);
+      for (let choice = 0; choice < 9; choice++) {
+        const next = randomWindContext(previous, () => choice / 9);
+        assert.notEqual(next.roundWind, roundWind);
+        assert.notEqual(next.seatWind, seatWind);
         combinations.add(`${next.roundWind}${next.seatWind}`);
       }
-      assert.equal(combinations.size, 15);
+      assert.equal(combinations.size, 9);
     }
   }
 });

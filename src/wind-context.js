@@ -1,11 +1,19 @@
-// 東・南・西・北の16通りから選ぶ。前回と同じ組み合わせは続けない。
+// 初回は16通り。次回以降は場風・自風をそれぞれ前回以外の3通りから選ぶ。
 export function randomWindContext(previous = null, random = Math.random) {
-  const previousIndex = previous
-    ? (previous.roundWind - 1) * 4 + previous.seatWind - 1
-    : -1;
-  const choice = Math.floor(random() * (previous ? 15 : 16));
-  const index = previous && choice >= previousIndex ? choice + 1 : choice;
-  return { roundWind: Math.floor(index / 4) + 1, seatWind: index % 4 + 1 };
+  if (!previous) {
+    const index = Math.floor(random() * 16);
+    return { roundWind: Math.floor(index / 4) + 1, seatWind: index % 4 + 1 };
+  }
+
+  const choice = Math.floor(random() * 9);
+  const chooseOtherWind = (oldWind, offset) => {
+    const candidate = offset + 1;
+    return candidate >= oldWind ? candidate + 1 : candidate;
+  };
+  return {
+    roundWind: chooseOtherWind(previous.roundWind, Math.floor(choice / 3)),
+    seatWind: chooseOtherWind(previous.seatWind, choice % 3),
+  };
 }
 
 export function windYakuHan(ctx, tileKey) {
